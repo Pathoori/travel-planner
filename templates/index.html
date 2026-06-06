@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌴 Travel Planner</title>
+    <link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+
+<!-- ── Sidebar Nav ── -->
+<nav class="sidebar">
+    <div class="logo">🌴 Trip<span>Planner</span></div>
+    <div class="nav-links">
+        <button class="nav-btn active" data-tab="dashboard" onclick="switchTab('dashboard')">🏠 Home</button>
+        <button class="nav-btn" data-tab="setup" onclick="switchTab('setup')">✈️ Trip Setup</button>
+        <button class="nav-btn" data-tab="travelers" onclick="switchTab('travelers')">👥 Travelers</button>
+        <button class="nav-btn" data-tab="meals" onclick="switchTab('meals')">🍽️ Meals</button>
+        <button class="nav-btn" data-tab="grocery" onclick="switchTab('grocery')">🛒 Grocery</button>
+        <button class="nav-btn" data-tab="itinerary" onclick="switchTab('itinerary')">📅 Itinerary</button>
+    </div>
+</nav>
+
+<!-- ── Main Content ── -->
+<main class="main">
+
+<!-- ══ TAB: Home ══ -->
+<section class="tab-content active" id="tab-dashboard">
+
+    <!-- Hero Banner -->
+    <div class="home-hero" id="home-hero">
+        <div class="hero-bg" id="hero-bg"></div>
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <div class="hero-group-photo" id="hero-group-photo"><span>👥</span></div>
+            <div class="hero-text" id="hero-text">
+                <h1 class="hero-title">Your Next Adventure</h1>
+                <p class="hero-subtitle">Set up your trip to get started</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Planning Progress -->
+    <div class="home-section">
+        <h2 class="section-title">📋 Planning Progress</h2>
+        <div class="progress-grid" id="progress-grid"></div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="home-section">
+        <h2 class="section-title">⚡ Quick Actions</h2>
+        <div class="action-grid">
+            <button class="action-card" onclick="switchTab('setup')">
+                <span class="action-icon">✈️</span>
+                <span class="action-label">Edit Trip</span>
+            </button>
+            <button class="action-card" onclick="switchTab('travelers')">
+                <span class="action-icon">👥</span>
+                <span class="action-label">Add Traveler</span>
+            </button>
+            <button class="action-card" onclick="switchTab('meals')">
+                <span class="action-icon">🍳</span>
+                <span class="action-label">Plan Meal</span>
+            </button>
+            <button class="action-card" onclick="switchTab('grocery')">
+                <span class="action-icon">🛒</span>
+                <span class="action-label">Grocery Item</span>
+            </button>
+            <button class="action-card" onclick="switchTab('itinerary')">
+                <span class="action-icon">📅</span>
+                <span class="action-label">Plan Day</span>
+            </button>
+        </div>
+    </div>
+
+</section>
+
+<!-- ══ TAB: Trip Setup ══ -->
+<section class="tab-content" id="tab-setup">
+    <h1>🏠 Trip Setup</h1>
+    <div class="card">
+        <div class="form-row">
+            <div class="form-group"><label>Trip Name</label><input type="text" id="trip-name" placeholder="Summer Beach Trip 2026"></div>
+            <div class="form-group"><label>Destination Address</label>
+                <div class="input-with-btn">
+                    <input type="text" id="trip-dest" placeholder="123 Beach Rd, Myrtle Beach, SC">
+                    <button class="btn-primary" onclick="geocodeAddress()">📍 Find</button>
+                </div>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>Start Date</label><input type="date" id="trip-start"></div>
+            <div class="form-group"><label>End Date</label><input type="date" id="trip-end"></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Group Photo</label>
+                <div class="photo-upload" id="group-photo-area">
+                    <div class="photo-preview" id="group-photo-preview"><span>👥 Click to upload</span></div>
+                    <input type="file" id="group-photo-input" accept="image/*" onchange="uploadPhoto('group')" hidden>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Destination Photo</label>
+                <div class="photo-upload" id="dest-photo-area">
+                    <div class="photo-preview" id="dest-photo-preview"><span>📍 Click to upload</span></div>
+                    <input type="file" id="dest-photo-input" accept="image/*" onchange="uploadPhoto('dest')" hidden>
+                </div>
+            </div>
+        </div>
+        <button class="btn-primary" onclick="saveTrip()">💾 Save Trip Details</button>
+    </div>
+
+    <!-- Map + Nearby Discovery -->
+    <div class="card" id="map-card" style="display:none">
+        <h2>🗺️ Destination Map</h2>
+        <div id="map" style="height:350px;border-radius:10px;margin-bottom:16px"></div>
+        <h3>🔍 Explore Nearby</h3>
+        <div class="cat-chips">
+            <button class="chip active" onclick="searchNearby('restaurant',this)">🍽️ Restaurants</button>
+            <button class="chip" onclick="searchNearby('cafe',this)">☕ Cafes</button>
+            <button class="chip" onclick="searchNearby('grocery',this)">🛒 Grocery</button>
+            <button class="chip" onclick="searchNearby('attraction',this)">🏛️ Attractions</button>
+            <button class="chip" onclick="searchNearby('entertainment',this)">🎭 Entertainment</button>
+            <button class="chip" onclick="searchNearby('bakery',this)">🥐 Bakeries</button>
+            <button class="chip" onclick="searchNearby('pharmacy',this)">💊 Pharmacy</button>
+            <button class="chip" onclick="searchNearby('gas',this)">⛽ Gas</button>
+        </div>
+        <div id="nearby-results" class="nearby-list"></div>
+    </div>
+</section>
+
+<!-- ══ TAB: Travelers ══ -->
+<section class="tab-content" id="tab-travelers">
+    <h1>👥 Travelers</h1>
+    <div class="card">
+        <div class="form-row">
+            <div class="form-group"><label>Name</label><input type="text" id="t-name" placeholder="John Doe"></div>
+            <div class="form-group"><label>Phone</label><input type="tel" id="t-phone" placeholder="(555) 123-4567"></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>Email</label><input type="email" id="t-email" placeholder="john@email.com"></div>
+            <div class="form-group"><label>Emergency Contact</label><input type="text" id="t-emergency" placeholder="Jane Doe (555) 987-6543"></div>
+        </div>
+        <button class="btn-primary" onclick="addTraveler()">➕ Add Traveler</button>
+    </div>
+    <div class="card">
+        <h2>👥 Trip Roster (<span id="traveler-count">0</span>)</h2>
+        <div id="travelers-list"></div>
+    </div>
+</section>
+
+<!-- ══ TAB: Meals ══ -->
+<section class="tab-content" id="tab-meals">
+    <h1>🍽️ Meal Planning</h1>
+    <div class="card">
+        <h2>🍳 Planned Meals</h2>
+        <div class="form-row">
+            <div class="form-group"><label>Meal Name</label><input type="text" id="m-name" placeholder="Taco Night"></div>
+            <div class="form-group"><label>Date</label><input type="date" id="m-date"></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>Type</label>
+                <select id="m-type"><option>Breakfast</option><option>Lunch</option><option selected>Dinner</option><option>Snack</option></select>
+            </div>
+            <div class="form-group"><label>Cook(s)</label><input type="text" id="m-cook" placeholder="Alice, Bob"></div>
+        </div>
+        <div class="form-group"><label>Notes</label><input type="text" id="m-notes" placeholder="Need taco shells, ground beef, salsa"></div>
+        <button class="btn-primary" onclick="addMeal()">➕ Add Meal</button>
+        <div id="meals-list" style="margin-top:16px"></div>
+    </div>
+    <div class="card">
+        <h2>🎒 Food Packing List (bring from home)</h2>
+        <div class="form-row">
+            <div class="form-group"><label>Item</label><input type="text" id="p-item" placeholder="Rice"></div>
+            <div class="form-group"><label>Quantity</label><input type="text" id="p-qty" placeholder="5 lbs"></div>
+            <div class="form-group"><label>Assigned To</label><input type="text" id="p-person" placeholder="Alice"></div>
+        </div>
+        <button class="btn-primary" onclick="addPackItem()">➕ Add Item</button>
+        <div id="packing-list" style="margin-top:16px"></div>
+    </div>
+</section>
+
+<!-- ══ TAB: Grocery ══ -->
+<section class="tab-content" id="tab-grocery">
+    <h1>🛒 Grocery Shopping List</h1>
+    <div class="card">
+        <div class="form-row">
+            <div class="form-group"><label>Item Name</label><input type="text" id="g-item" placeholder="Ground Beef"></div>
+            <div class="form-group"><label>Quantity</label><input type="text" id="g-qty" placeholder="3 lbs"></div>
+            <div class="form-group"><label>Shopper</label><input type="text" id="g-shopper" placeholder="Bob"></div>
+        </div>
+        <button class="btn-primary" onclick="addGroceryItem()">➕ Add Item</button>
+    </div>
+    <div class="card">
+        <h2>📋 Shopping List (<span id="grocery-count">0</span> items)</h2>
+        <div id="grocery-list"></div>
+    </div>
+</section>
+
+<!-- ══ TAB: Itinerary ══ -->
+<section class="tab-content" id="tab-itinerary">
+    <h1>📅 Day-by-Day Itinerary</h1>
+    <div class="card">
+        <div class="form-row">
+            <div class="form-group"><label>Date</label><input type="date" id="i-date"></div>
+            <div class="form-group"><label>Time</label><input type="time" id="i-time"></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>Activity / Event</label><input type="text" id="i-activity" placeholder="Beach volleyball, Dinner at Joe's, ..."></div>
+            <div class="form-group"><label>Notes</label><input type="text" id="i-notes" placeholder="Bring sunscreen"></div>
+        </div>
+        <button class="btn-primary" onclick="addItineraryItem()">➕ Add to Itinerary</button>
+    </div>
+    <div class="card">
+        <h2>📋 Trip Schedule</h2>
+        <div id="itinerary-list"></div>
+    </div>
+</section>
+
+</main>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
