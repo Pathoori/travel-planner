@@ -14,6 +14,7 @@ app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload
 
 GOOGLE_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY", "")
+DATABASE_URL = os.environ.get("DATABASE_URL", "")
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "uploads")
@@ -34,18 +35,71 @@ TRIP_DEFAULTS = {
     "saved_places": [],
 }
 
+# ── Database setup (PostgreSQL on Render, JSON file locally) ──
+
+def _init_db():
+    """Create the trip table if using PostgreSQL."""
+    if not DATABASE_URL:
+        return
+    import psycopg2
+    conn = psycopg2.connect(DATABASE_URL)
+    cur = conn.cursor()
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS trip_data (
+            id INTEGER PRIMARY KEY DEFAULT 1,
+            data JSONB NOT NULL DEFAULT '{}'::jsonb
+        )
+    """)
+    cur.execute("INSERT INTO trip_data (id, data) VALUES (1, %s) ON CONFLICT (id) DO NOTHING", [json.dumps(TRIP_DEFAULTS)])
+    conn.commit()
+    cur.close()
+    conn.close()
+
+try:
+    _init_db()
+    print("[DB] PostgreSQL connected" if DATABASE_URL else "[DB] Using local JSON files")
+except Exception as e:
+    print(f"[DB Error] {e}")
+
 
 def _load():
-    try:
-        with open(TRIP_FILE) as f:
-            return {**TRIP_DEFAULTS, **json.load(f)}
-    except Exception:
+    if DATABASE_URL:
+        import psycopg2
+        try:
+            conn = psycopg2.connect(DATABASE_URL)
+            cur = conn.cursor()
+            cur.execute("SELECT data FROM trip_data WHERE id = 1")
+            row = cur.fetchone()
+            cur.close()
+            conn.close()
+            if row:
+                return {**TRIP_DEFAULTS, **row[0]}
+        except Exception as e:
+            print(f"[DB Load Error] {e}")
         return dict(TRIP_DEFAULTS)
+    else:
+        try:
+            with open(TRIP_FILE) as f:
+                return {**TRIP_DEFAULTS, **json.load(f)}
+        except Exception:
+            return dict(TRIP_DEFAULTS)
 
 
 def _save(data):
-    with open(TRIP_FILE, "w") as f:
-        json.dump(data, f, indent=2)
+    if DATABASE_URL:
+        import psycopg2
+        try:
+            conn = psycopg2.connect(DATABASE_URL)
+            cur = conn.cursor()
+            cur.execute("UPDATE trip_data SET data = %s WHERE id = 1", [json.dumps(data)])
+            conn.commit()
+            cur.close()
+            conn.close()
+        except Exception as e:
+            print(f"[DB Save Error] {e}")
+    else:
+        with open(TRIP_FILE, "w") as f:
+            json.dump(data, f, indent=2)
 
 
 # ── Pages ──
