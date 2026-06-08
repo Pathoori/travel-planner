@@ -16,7 +16,7 @@
         <button class="nav-btn" data-tab="setup" onclick="switchTab('setup')">✈️ Trip Setup</button>
         <button class="nav-btn" data-tab="travelers" onclick="switchTab('travelers')">👥 Travelers</button>
         <button class="nav-btn" data-tab="meals" onclick="switchTab('meals')">🍽️ Food Menu</button>
-        <button class="nav-btn" data-tab="grocery" onclick="switchTab('grocery')">🛒 Grocery</button>
+        <button class="nav-btn" data-tab="grocery" onclick="switchTab('grocery')">🧳 Essentials</button>
         <button class="nav-btn" data-tab="itinerary" onclick="switchTab('itinerary')">📅 Itinerary</button>
     </div>
 </nav>
@@ -172,29 +172,61 @@
     </div>
 </section>
 
-<!-- ══ TAB: Grocery ══ -->
+<!-- ══ TAB: Trip Essentials ══ -->
 <section class="tab-content" id="tab-grocery">
-    <h1>🛒 Grocery Shopping List</h1>
-    <div class="card">
-        <div class="form-row">
-            <div class="form-group"><label>Item Name</label><input type="text" id="g-item" placeholder="Ground Beef"></div>
-            <div class="form-group"><label>Quantity</label><input type="text" id="g-qty" placeholder="3 lbs"></div>
-            <div class="form-group"><label>Shopper</label><input type="text" id="g-shopper" placeholder="Bob"></div>
-            <div class="form-group"><label>Status</label>
-                <select id="g-status"><option value="Need to Buy">Need to Buy</option><option value="In Cart">In Cart</option><option value="Purchased">Purchased</option></select>
+    <h1>🧳 Trip Essentials</h1>
+
+    <!-- Sub-tab pills -->
+    <div class="sub-tabs">
+        <button class="sub-tab active" data-subtab="home" onclick="switchSubTab('home', this)">🏠 Bring from Home</button>
+        <button class="sub-tab" data-subtab="purchase" onclick="switchSubTab('purchase', this)">🛒 Items to Purchase</button>
+    </div>
+
+    <!-- ── Sub-tab: Bring from Home ── -->
+    <div class="sub-content active" id="subtab-home">
+        <div class="card">
+            <div class="form-row">
+                <div class="form-group"><label>Item Name</label><input type="text" id="h-item" placeholder="Rice, Plates, Blankets..."></div>
+                <div class="form-group"><label>Quantity</label><input type="text" id="h-qty" placeholder="5 lbs"></div>
+                <div class="form-group"><label>Assigned To</label><input type="text" id="h-person" placeholder="Alice"></div>
+                <div class="form-group"><label>Notes</label><input type="text" id="h-notes" placeholder="Any notes..."></div>
             </div>
-            <div class="form-group"><label>Notes</label><input type="text" id="g-notes" placeholder="Any notes..."></div>
+            <div class="csv-actions">
+                <button class="btn-primary" onclick="addHomeItem()">➕ Add Item</button>
+                <button class="btn-accent" onclick="downloadCSV('home')">⬇️ Download</button>
+                <button class="btn-accent" onclick="document.getElementById('home-upload').click()">⬆️ Upload</button>
+                <input type="file" id="home-upload" accept=".csv" onchange="uploadCSV('home', this)" hidden>
+            </div>
         </div>
-        <div class="csv-actions">
-            <button class="btn-primary" onclick="addGroceryItem()">➕ Add Item</button>
-            <button class="btn-accent" onclick="downloadCSV('grocery')">⬇️ Download</button>
-            <button class="btn-accent" onclick="document.getElementById('grocery-upload').click()">⬆️ Upload</button>
-            <input type="file" id="grocery-upload" accept=".csv" onchange="uploadCSV('grocery', this)" hidden>
+        <div class="card">
+            <h2>🏠 Bring from Home (<span id="home-count">0</span> items)</h2>
+            <div id="home-list"></div>
         </div>
     </div>
-    <div class="card">
-        <h2>📋 Shopping List (<span id="grocery-count">0</span> items)</h2>
-        <div id="grocery-list"></div>
+
+    <!-- ── Sub-tab: Items to Purchase ── -->
+    <div class="sub-content" id="subtab-purchase">
+        <div class="card">
+            <div class="form-row">
+                <div class="form-group"><label>Item Name</label><input type="text" id="g-item" placeholder="Ground Beef"></div>
+                <div class="form-group"><label>Quantity</label><input type="text" id="g-qty" placeholder="3 lbs"></div>
+                <div class="form-group"><label>Shopper</label><input type="text" id="g-shopper" placeholder="Bob"></div>
+                <div class="form-group"><label>Status</label>
+                    <select id="g-status"><option value="Need to Buy">Need to Buy</option><option value="In Cart">In Cart</option><option value="Purchased">Purchased</option></select>
+                </div>
+                <div class="form-group"><label>Notes</label><input type="text" id="g-notes" placeholder="Any notes..."></div>
+            </div>
+            <div class="csv-actions">
+                <button class="btn-primary" onclick="addGroceryItem()">➕ Add Item</button>
+                <button class="btn-accent" onclick="downloadCSV('grocery')">⬇️ Download</button>
+                <button class="btn-accent" onclick="document.getElementById('grocery-upload').click()">⬆️ Upload</button>
+                <input type="file" id="grocery-upload" accept=".csv" onchange="uploadCSV('grocery', this)" hidden>
+            </div>
+        </div>
+        <div class="card">
+            <h2>🛒 Items to Purchase (<span id="grocery-count">0</span> items)</h2>
+            <div id="grocery-list"></div>
+        </div>
     </div>
 </section>
 

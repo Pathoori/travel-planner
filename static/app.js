@@ -286,7 +286,70 @@ async function removeMeal(i) {
 }
 
 // ══════════════════════════════════════
-// GROCERY LIST
+// SUB-TAB SWITCHING (Essentials)
+// ══════════════════════════════════════
+
+function switchSubTab(tab, btn) {
+    document.querySelectorAll('.sub-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.sub-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    $('subtab-' + tab).classList.add('active');
+}
+
+// ══════════════════════════════════════
+// BRING FROM HOME LIST
+// ══════════════════════════════════════
+
+function renderHomeList() {
+    const list = (_trip.home_list || []);
+    $('home-count').textContent = list.length;
+    if (!list.length) { $('home-list').innerHTML = '<p class="muted">No items yet</p>'; return; }
+    let html = `<table class="list-table"><thead><tr><th>✓</th><th>Item</th><th>Qty</th><th>Assigned To</th><th>Notes</th><th></th></tr></thead><tbody>`;
+    list.forEach((h, i) => {
+        const packed = h.packed;
+        html += `<tr style="${packed ? 'opacity:.55' : ''}">
+            <td><button class="check-btn ${packed ? 'checked' : ''}" onclick="toggleHomePacked(${i})">${packed ? '✓' : ''}</button></td>
+            <td style="${packed ? 'text-decoration:line-through' : ''}"><strong>${h.item}</strong></td>
+            <td>${h.qty || '—'}</td>
+            <td>${h.person || '—'}</td>
+            <td style="max-width:180px;font-size:.78rem;color:#94a3b8">${h.notes || '—'}</td>
+            <td class="right"><button class="btn-danger btn-sm" onclick="removeHomeItem(${i})">✕</button></td>
+        </tr>`;
+    });
+    html += '</tbody></table>';
+    $('home-list').innerHTML = html;
+}
+
+async function addHomeItem() {
+    const item = $('h-item').value.trim();
+    if (!item) { toast('Enter item name'); return; }
+    if (!_trip.home_list) _trip.home_list = [];
+    _trip.home_list.push({ item, qty: $('h-qty').value, person: $('h-person').value, notes: $('h-notes').value, packed: false });
+    await postJSON('/api/homelist', _trip.home_list);
+    $('h-item').value = ''; $('h-qty').value = ''; $('h-person').value = ''; $('h-notes').value = '';
+    renderHomeList();
+    toast('🏠 Item added!');
+}
+
+async function toggleHomePacked(i) {
+    _trip.home_list[i].packed = !_trip.home_list[i].packed;
+    await postJSON('/api/homelist', _trip.home_list);
+    renderHomeList();
+}
+
+async function removeHomeItem(i) {
+    _trip.home_list.splice(i, 1);
+    await postJSON('/api/homelist', _trip.home_list);
+    renderHomeList();
+}
+
+async function loadHomeList() {
+    _trip.home_list = await api('/api/homelist');
+    renderHomeList();
+}
+
+// ══════════════════════════════════════
+// ITEMS TO PURCHASE (GROCERY)
 // ══════════════════════════════════════
 
 async function loadGrocery() {
@@ -440,7 +503,7 @@ function renderDashboard() {
     $('progress-grid').innerHTML = `
         <div class="prog-card clickable" onclick="switchTab('travelers')"><div class="prog-icon cyan">👥</div><div class="prog-data"><div class="prog-num">${travelers}</div><div class="prog-label">Travelers</div></div></div>
         <div class="prog-card clickable" onclick="switchTab('meals')"><div class="prog-icon orange">🍽️</div><div class="prog-data"><div class="prog-num">${meals}</div><div class="prog-label">Food Menu</div></div></div>
-        <div class="prog-card clickable" onclick="switchTab('grocery')"><div class="prog-icon pink">🛒</div><div class="prog-data"><div class="prog-num">${groceryBought} / ${groceryTotal}</div><div class="prog-label">Grocery Bought</div></div></div>
+        <div class="prog-card clickable" onclick="switchTab('grocery')"><div class="prog-icon pink">🧳</div><div class="prog-data"><div class="prog-num">${((_trip.home_list||[]).length) + groceryTotal}</div><div class="prog-label">Trip Essentials</div></div></div>
         <div class="prog-card clickable" onclick="switchTab('itinerary')"><div class="prog-icon purple">📅</div><div class="prog-data"><div class="prog-num">${activities}</div><div class="prog-label">Activities</div></div></div>
         <div class="prog-card clickable" onclick="switchTab('setup')"><div class="prog-icon blue">⭐</div><div class="prog-data"><div class="prog-num">${savedPlaces}</div><div class="prog-label">Saved Places</div></div></div>
     `;
@@ -462,10 +525,14 @@ function downloadCSV(type) {
         csv = 'Item Name,Assigned To,Notes\n';
         (_trip.meals || []).forEach(m => { csv += `${csvEscape(m.name)},${csvEscape(m.cook)},${csvEscape(m.notes)}\n`; });
         filename = 'food-menu.csv';
+    } else if (type === 'home') {
+        csv = 'Item,Quantity,Assigned To,Notes,Packed\n';
+        (_trip.home_list || []).forEach(h => { csv += `${csvEscape(h.item)},${csvEscape(h.qty)},${csvEscape(h.person)},${csvEscape(h.notes)},${h.packed ? 'Yes' : 'No'}\n`; });
+        filename = 'bring-from-home.csv';
     } else if (type === 'grocery') {
         csv = 'Item,Quantity,Shopper,Status,Notes\n';
         (_trip.grocery_list || []).forEach(g => { csv += `${csvEscape(g.item)},${csvEscape(g.qty)},${csvEscape(g.shopper)},${csvEscape(g.status || 'Need to Buy')},${csvEscape(g.notes)}\n`; });
-        filename = 'grocery-list.csv';
+        filename = 'items-to-purchase.csv';
     }
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const a = document.createElement('a');
@@ -493,6 +560,14 @@ function uploadCSV(type, input) {
             });
             await postJSON('/api/meals', { meals: _trip.meals });
             renderMeals();
+        } else if (type === 'home') {
+            if (!_trip.home_list) _trip.home_list = [];
+            rows.forEach(line => {
+                const cols = parseCSVLine(line);
+                if (cols[0]) { _trip.home_list.push({ item: cols[0], qty: cols[1] || '', person: cols[2] || '', notes: cols[3] || '', packed: (cols[4] || '').toLowerCase() === 'yes' }); count++; }
+            });
+            await postJSON('/api/homelist', _trip.home_list);
+            renderHomeList();
         } else if (type === 'grocery') {
             rows.forEach(line => {
                 const cols = parseCSVLine(line);
@@ -536,6 +611,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadTravelers();
     await loadMeals();
     await loadGrocery();
+    await loadHomeList();
     await loadItinerary();
     renderDashboard();
 });

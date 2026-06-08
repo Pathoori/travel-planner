@@ -146,6 +146,14 @@ select{cursor:pointer}
 .status-yellow{background:#422006;color:#fde68a;border:1px solid #78350f}
 .status-green{background:#052e16;color:#86efac;border:1px solid #14532d}
 
+/* ── Sub-tabs (Essentials) ── */
+.sub-tabs{display:flex;gap:6px;margin-bottom:20px}
+.sub-tab{background:#111827;color:#94a3b8;border:1px solid #1e293b;padding:10px 20px;border-radius:10px;font-size:.85rem;font-weight:700;cursor:pointer;transition:all .15s}
+.sub-tab:hover{background:#1e293b;color:#e2e8f0}
+.sub-tab.active{background:linear-gradient(135deg,#0ea5e9,#8b5cf6);color:#fff;border-color:transparent}
+.sub-content{display:none}
+.sub-content.active{display:block}
+
 /* ── CSV action buttons ── */
 .csv-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
 

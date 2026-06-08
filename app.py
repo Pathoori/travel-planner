@@ -33,6 +33,7 @@ TRIP_DEFAULTS = {
     "grocery_list": [],
     "itinerary": [],
     "saved_places": [],
+    "home_list": [],
 }
 
 # ── Database setup (PostgreSQL on Render, JSON file locally) ──
@@ -206,6 +207,21 @@ def get_itinerary():
 def save_itinerary():
     trip = _load()
     trip["itinerary"] = request.get_json()
+    _save(trip)
+    return jsonify({"ok": True})
+
+
+# ── Home List (Bring from Home) ──
+
+@app.route("/api/homelist", methods=["GET"])
+def get_homelist():
+    return jsonify(_load().get("home_list", []))
+
+
+@app.route("/api/homelist", methods=["POST"])
+def save_homelist():
+    trip = _load()
+    trip["home_list"] = request.get_json()
     _save(trip)
     return jsonify({"ok": True})
 
