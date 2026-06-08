@@ -139,6 +139,13 @@ select{cursor:pointer}
 .toast{position:fixed;bottom:24px;right:24px;background:#22c55e;color:#fff;padding:12px 22px;border-radius:10px;font-weight:700;font-size:.85rem;box-shadow:0 8px 24px rgba(0,0,0,.4);opacity:0;transform:translateY(20px);transition:all .3s;z-index:999;pointer-events:none}
 .toast.show{opacity:1;transform:translateY(0)}
 
+/* ── Status badges (grocery) ── */
+.status-badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:.72rem;font-weight:700;border:none;cursor:pointer;transition:all .15s;white-space:nowrap}
+.status-badge:hover{transform:scale(1.05);filter:brightness(1.2)}
+.status-red{background:#450a0a;color:#fca5a5;border:1px solid #7f1d1d}
+.status-yellow{background:#422006;color:#fde68a;border:1px solid #78350f}
+.status-green{background:#052e16;color:#86efac;border:1px solid #14532d}
+
 /* ── CSV action buttons ── */
 .csv-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
 

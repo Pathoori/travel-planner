@@ -298,14 +298,16 @@ function renderGrocery() {
     const list = _trip.grocery_list || [];
     $('grocery-count').textContent = list.length;
     if (!list.length) { $('grocery-list').innerHTML = '<p class="muted">No items yet</p>'; return; }
-    let html = `<table class="list-table"><thead><tr><th>✓</th><th>Item</th><th>Qty</th><th>Shopper</th><th>Notes</th><th></th></tr></thead><tbody>`;
+    let html = `<table class="list-table"><thead><tr><th>Item</th><th>Qty</th><th>Shopper</th><th>Status</th><th>Notes</th><th></th></tr></thead><tbody>`;
     list.forEach((g, i) => {
-        const bought = g.purchased;
-        html += `<tr style="${bought ? 'opacity:.5' : ''}">
-            <td><button class="check-btn ${bought ? 'checked' : ''}" onclick="toggleGrocery(${i})">${bought ? '✓' : ''}</button></td>
-            <td style="${bought ? 'text-decoration:line-through' : ''}"><strong>${g.item}</strong></td>
+        const status = g.status || 'Need to Buy';
+        const statusClass = { 'Need to Buy': 'status-red', 'In Cart': 'status-yellow', 'Purchased': 'status-green' }[status] || 'status-red';
+        const done = status === 'Purchased';
+        html += `<tr style="${done ? 'opacity:.55' : ''}">
+            <td style="${done ? 'text-decoration:line-through' : ''}"><strong>${g.item}</strong></td>
             <td>${g.qty || '—'}</td>
             <td>${g.shopper || '—'}</td>
+            <td><button class="status-badge ${statusClass}" onclick="cycleGroceryStatus(${i})">${status}</button></td>
             <td style="max-width:180px;font-size:.78rem;color:#94a3b8">${g.notes || '—'}</td>
             <td class="right"><button class="btn-danger btn-sm" onclick="removeGrocery(${i})">✕</button></td>
         </tr>`;
@@ -317,15 +319,20 @@ function renderGrocery() {
 async function addGroceryItem() {
     const item = $('g-item').value.trim();
     if (!item) { toast('Enter item name'); return; }
-    _trip.grocery_list.push({ item, qty: $('g-qty').value, shopper: $('g-shopper').value, notes: $('g-notes').value, purchased: false });
+    const status = $('g-status').value;
+    _trip.grocery_list.push({ item, qty: $('g-qty').value, shopper: $('g-shopper').value, status, notes: $('g-notes').value, purchased: status === 'Purchased' });
     await postJSON('/api/grocery', _trip.grocery_list);
-    $('g-item').value = ''; $('g-qty').value = ''; $('g-shopper').value = ''; $('g-notes').value = '';
+    $('g-item').value = ''; $('g-qty').value = ''; $('g-shopper').value = ''; $('g-notes').value = ''; $('g-status').value = 'Need to Buy';
     renderGrocery();
     toast('🛒 Item added!');
 }
 
-async function toggleGrocery(i) {
-    _trip.grocery_list[i].purchased = !_trip.grocery_list[i].purchased;
+async function cycleGroceryStatus(i) {
+    const order = ['Need to Buy', 'In Cart', 'Purchased'];
+    const cur = _trip.grocery_list[i].status || 'Need to Buy';
+    const next = order[(order.indexOf(cur) + 1) % order.length];
+    _trip.grocery_list[i].status = next;
+    _trip.grocery_list[i].purchased = next === 'Purchased';
     await postJSON('/api/grocery', _trip.grocery_list);
     renderGrocery();
 }
@@ -456,8 +463,8 @@ function downloadCSV(type) {
         (_trip.meals || []).forEach(m => { csv += `${csvEscape(m.name)},${csvEscape(m.cook)},${csvEscape(m.notes)}\n`; });
         filename = 'food-menu.csv';
     } else if (type === 'grocery') {
-        csv = 'Item,Quantity,Shopper,Notes,Purchased\n';
-        (_trip.grocery_list || []).forEach(g => { csv += `${csvEscape(g.item)},${csvEscape(g.qty)},${csvEscape(g.shopper)},${csvEscape(g.notes)},${g.purchased ? 'Yes' : 'No'}\n`; });
+        csv = 'Item,Quantity,Shopper,Status,Notes\n';
+        (_trip.grocery_list || []).forEach(g => { csv += `${csvEscape(g.item)},${csvEscape(g.qty)},${csvEscape(g.shopper)},${csvEscape(g.status || 'Need to Buy')},${csvEscape(g.notes)}\n`; });
         filename = 'grocery-list.csv';
     }
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -490,7 +497,8 @@ function uploadCSV(type, input) {
             rows.forEach(line => {
                 const cols = parseCSVLine(line);
                 if (cols[0]) {
-                    _trip.grocery_list.push({ item: cols[0], qty: cols[1] || '', shopper: cols[2] || '', notes: cols[3] || '', purchased: (cols[4] || '').toLowerCase() === 'yes' });
+                    const st = cols[3] || 'Need to Buy';
+                    _trip.grocery_list.push({ item: cols[0], qty: cols[1] || '', shopper: cols[2] || '', status: st, notes: cols[4] || '', purchased: st === 'Purchased' });
                     count++;
                 }
             });
