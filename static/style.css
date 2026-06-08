@@ -139,6 +139,9 @@ select{cursor:pointer}
 .toast{position:fixed;bottom:24px;right:24px;background:#22c55e;color:#fff;padding:12px 22px;border-radius:10px;font-weight:700;font-size:.85rem;box-shadow:0 8px 24px rgba(0,0,0,.4);opacity:0;transform:translateY(20px);transition:all .3s;z-index:999;pointer-events:none}
 .toast.show{opacity:1;transform:translateY(0)}
 
+/* ── CSV action buttons ── */
+.csv-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+
 /* ── Grocery header ── */
 .grocery-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:14px}
 .grocery-total{font-size:1rem;color:#22d3ee}

@@ -249,21 +249,18 @@ async function removeTraveler(i) {
 async function loadMeals() {
     const d = await api('/api/meals');
     _trip.meals = d.meals || [];
-    _trip.packing_list = d.packing_list || [];
     renderMeals();
-    renderPacking();
 }
 
 function renderMeals() {
     const list = _trip.meals || [];
-    if (!list.length) { $('meals-list').innerHTML = '<p class="muted">No meals planned yet</p>'; return; }
-    let html = `<table class="list-table"><thead><tr><th>Meal</th><th>Date</th><th>Type</th><th>Cook(s)</th><th>Notes</th><th></th></tr></thead><tbody>`;
+    $('meals-count').textContent = list.length;
+    if (!list.length) { $('meals-list').innerHTML = '<p class="muted">No items yet</p>'; return; }
+    let html = `<table class="list-table"><thead><tr><th>Item</th><th>Assigned To</th><th></th></tr></thead><tbody>`;
     list.forEach((m, i) => {
-        const badge = { Breakfast: 'badge-yellow', Lunch: 'badge-blue', Dinner: 'badge-green', Snack: 'badge-red' }[m.type] || 'badge-blue';
         html += `<tr>
-            <td><strong>${m.name}</strong></td><td>${m.date || '—'}</td>
-            <td><span class="badge ${badge}">${m.type}</span></td>
-            <td>${m.cook || '—'}</td><td style="max-width:180px;font-size:.78rem;color:#94a3b8">${m.notes || ''}</td>
+            <td><strong>${m.name}</strong></td>
+            <td>${m.cook || '—'}</td>
             <td class="right"><button class="btn-danger btn-sm" onclick="removeMeal(${i})">✕</button></td>
         </tr>`;
     });
@@ -273,56 +270,18 @@ function renderMeals() {
 
 async function addMeal() {
     const name = $('m-name').value.trim();
-    if (!name) { toast('Enter meal name'); return; }
-    _trip.meals.push({ name, date: $('m-date').value, type: $('m-type').value, cook: $('m-cook').value, notes: $('m-notes').value });
-    await postJSON('/api/meals', { meals: _trip.meals, packing_list: _trip.packing_list });
-    $('m-name').value = ''; $('m-notes').value = ''; $('m-cook').value = '';
+    if (!name) { toast('Enter item name'); return; }
+    _trip.meals.push({ name, cook: $('m-cook').value });
+    await postJSON('/api/meals', { meals: _trip.meals });
+    $('m-name').value = ''; $('m-cook').value = '';
     renderMeals();
-    toast('🍽️ Meal added!');
+    toast('🍽️ Item added!');
 }
 
 async function removeMeal(i) {
     _trip.meals.splice(i, 1);
-    await postJSON('/api/meals', { meals: _trip.meals, packing_list: _trip.packing_list });
+    await postJSON('/api/meals', { meals: _trip.meals });
     renderMeals();
-}
-
-function renderPacking() {
-    const list = _trip.packing_list || [];
-    if (!list.length) { $('packing-list').innerHTML = '<p class="muted">No items yet</p>'; return; }
-    let html = `<table class="list-table"><thead><tr><th>Packed</th><th>Item</th><th>Qty</th><th>Assigned To</th><th></th></tr></thead><tbody>`;
-    list.forEach((p, i) => {
-        html += `<tr>
-            <td><button class="check-btn ${p.packed ? 'checked' : ''}" onclick="togglePacked(${i})">${p.packed ? '✓' : ''}</button></td>
-            <td style="${p.packed ? 'text-decoration:line-through;opacity:.5' : ''}">${p.item}</td>
-            <td>${p.qty || '—'}</td><td>${p.person || '—'}</td>
-            <td class="right"><button class="btn-danger btn-sm" onclick="removePackItem(${i})">✕</button></td>
-        </tr>`;
-    });
-    html += '</tbody></table>';
-    $('packing-list').innerHTML = html;
-}
-
-async function addPackItem() {
-    const item = $('p-item').value.trim();
-    if (!item) { toast('Enter item name'); return; }
-    _trip.packing_list.push({ item, qty: $('p-qty').value, person: $('p-person').value, packed: false });
-    await postJSON('/api/meals', { meals: _trip.meals, packing_list: _trip.packing_list });
-    $('p-item').value = ''; $('p-qty').value = ''; $('p-person').value = '';
-    renderPacking();
-    toast('🎒 Item added!');
-}
-
-async function togglePacked(i) {
-    _trip.packing_list[i].packed = !_trip.packing_list[i].packed;
-    await postJSON('/api/meals', { meals: _trip.meals, packing_list: _trip.packing_list });
-    renderPacking();
-}
-
-async function removePackItem(i) {
-    _trip.packing_list.splice(i, 1);
-    await postJSON('/api/meals', { meals: _trip.meals, packing_list: _trip.packing_list });
-    renderPacking();
 }
 
 // ══════════════════════════════════════
@@ -464,8 +423,6 @@ function renderDashboard() {
     // ── Progress Grid ──
     const travelers = (_trip.travelers || []).length;
     const meals = (_trip.meals || []).length;
-    const packed = (_trip.packing_list || []).filter(p => p.packed).length;
-    const packTotal = (_trip.packing_list || []).length;
     const groceryBought = (_trip.grocery_list || []).filter(g => g.purchased).length;
     const groceryTotal = (_trip.grocery_list || []).length;
     const activities = (_trip.itinerary || []).length;
@@ -473,12 +430,94 @@ function renderDashboard() {
 
     $('progress-grid').innerHTML = `
         <div class="prog-card clickable" onclick="switchTab('travelers')"><div class="prog-icon cyan">👥</div><div class="prog-data"><div class="prog-num">${travelers}</div><div class="prog-label">Travelers</div></div></div>
-        <div class="prog-card clickable" onclick="switchTab('meals')"><div class="prog-icon orange">🍽️</div><div class="prog-data"><div class="prog-num">${meals}</div><div class="prog-label">Meals Planned</div></div></div>
-        <div class="prog-card clickable" onclick="switchTab('meals')"><div class="prog-icon green">🎒</div><div class="prog-data"><div class="prog-num">${packed} / ${packTotal}</div><div class="prog-label">Items Packed</div></div></div>
+        <div class="prog-card clickable" onclick="switchTab('meals')"><div class="prog-icon orange">🍽️</div><div class="prog-data"><div class="prog-num">${meals}</div><div class="prog-label">Food Menu</div></div></div>
         <div class="prog-card clickable" onclick="switchTab('grocery')"><div class="prog-icon pink">🛒</div><div class="prog-data"><div class="prog-num">${groceryBought} / ${groceryTotal}</div><div class="prog-label">Grocery Bought</div></div></div>
         <div class="prog-card clickable" onclick="switchTab('itinerary')"><div class="prog-icon purple">📅</div><div class="prog-data"><div class="prog-num">${activities}</div><div class="prog-label">Activities</div></div></div>
         <div class="prog-card clickable" onclick="switchTab('setup')"><div class="prog-icon blue">⭐</div><div class="prog-data"><div class="prog-num">${savedPlaces}</div><div class="prog-label">Saved Places</div></div></div>
     `;
+}
+
+// ══════════════════════════════════════
+// CSV DOWNLOAD / UPLOAD
+// ══════════════════════════════════════
+
+function csvEscape(val) {
+    val = String(val || '');
+    if (val.includes(',') || val.includes('"') || val.includes('\n')) return '"' + val.replace(/"/g, '""') + '"';
+    return val;
+}
+
+function downloadCSV(type) {
+    let csv = '', filename = '';
+    if (type === 'meals') {
+        csv = 'Item Name,Assigned To\n';
+        (_trip.meals || []).forEach(m => { csv += `${csvEscape(m.name)},${csvEscape(m.cook)}\n`; });
+        filename = 'food-menu.csv';
+    } else if (type === 'grocery') {
+        csv = 'Item,Quantity,Shopper,Purchased\n';
+        (_trip.grocery_list || []).forEach(g => { csv += `${csvEscape(g.item)},${csvEscape(g.qty)},${csvEscape(g.shopper)},${g.purchased ? 'Yes' : 'No'}\n`; });
+        filename = 'grocery-list.csv';
+    }
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast('⬇️ Downloaded ' + filename);
+}
+
+function uploadCSV(type, input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        const lines = e.target.result.split('\n').filter(l => l.trim());
+        if (lines.length < 2) { toast('❌ CSV is empty or has no data rows'); input.value = ''; return; }
+        // Skip header row
+        const rows = lines.slice(1);
+        let count = 0;
+        if (type === 'meals') {
+            rows.forEach(line => {
+                const cols = parseCSVLine(line);
+                if (cols[0]) { _trip.meals.push({ name: cols[0], cook: cols[1] || '' }); count++; }
+            });
+            await postJSON('/api/meals', { meals: _trip.meals });
+            renderMeals();
+        } else if (type === 'grocery') {
+            rows.forEach(line => {
+                const cols = parseCSVLine(line);
+                if (cols[0]) {
+                    _trip.grocery_list.push({ item: cols[0], qty: cols[1] || '', shopper: cols[2] || '', purchased: (cols[3] || '').toLowerCase() === 'yes' });
+                    count++;
+                }
+            });
+            await postJSON('/api/grocery', _trip.grocery_list);
+            renderGrocery();
+        }
+        input.value = '';
+        toast(`⬆️ Imported ${count} items from CSV`);
+    };
+    reader.readAsText(file);
+}
+
+function parseCSVLine(line) {
+    const result = [];
+    let cur = '', inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (inQuotes) {
+            if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+            else if (ch === '"') inQuotes = false;
+            else cur += ch;
+        } else {
+            if (ch === '"') inQuotes = true;
+            else if (ch === ',') { result.push(cur.trim()); cur = ''; }
+            else cur += ch;
+        }
+    }
+    result.push(cur.trim());
+    return result;
 }
 
 // ── Boot ──
