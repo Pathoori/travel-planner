@@ -256,11 +256,12 @@ function renderMeals() {
     const list = _trip.meals || [];
     $('meals-count').textContent = list.length;
     if (!list.length) { $('meals-list').innerHTML = '<p class="muted">No items yet</p>'; return; }
-    let html = `<table class="list-table"><thead><tr><th>Item</th><th>Assigned To</th><th></th></tr></thead><tbody>`;
+    let html = `<table class="list-table"><thead><tr><th>Item</th><th>Assigned To</th><th>Notes</th><th></th></tr></thead><tbody>`;
     list.forEach((m, i) => {
         html += `<tr>
             <td><strong>${m.name}</strong></td>
             <td>${m.cook || '—'}</td>
+            <td style="max-width:180px;font-size:.78rem;color:#94a3b8">${m.notes || '—'}</td>
             <td class="right"><button class="btn-danger btn-sm" onclick="removeMeal(${i})">✕</button></td>
         </tr>`;
     });
@@ -271,9 +272,9 @@ function renderMeals() {
 async function addMeal() {
     const name = $('m-name').value.trim();
     if (!name) { toast('Enter item name'); return; }
-    _trip.meals.push({ name, cook: $('m-cook').value });
+    _trip.meals.push({ name, cook: $('m-cook').value, notes: $('m-notes').value });
     await postJSON('/api/meals', { meals: _trip.meals });
-    $('m-name').value = ''; $('m-cook').value = '';
+    $('m-name').value = ''; $('m-cook').value = ''; $('m-notes').value = '';
     renderMeals();
     toast('🍽️ Item added!');
 }
@@ -297,7 +298,7 @@ function renderGrocery() {
     const list = _trip.grocery_list || [];
     $('grocery-count').textContent = list.length;
     if (!list.length) { $('grocery-list').innerHTML = '<p class="muted">No items yet</p>'; return; }
-    let html = `<table class="list-table"><thead><tr><th>✓</th><th>Item</th><th>Qty</th><th>Shopper</th><th></th></tr></thead><tbody>`;
+    let html = `<table class="list-table"><thead><tr><th>✓</th><th>Item</th><th>Qty</th><th>Shopper</th><th>Notes</th><th></th></tr></thead><tbody>`;
     list.forEach((g, i) => {
         const bought = g.purchased;
         html += `<tr style="${bought ? 'opacity:.5' : ''}">
@@ -305,6 +306,7 @@ function renderGrocery() {
             <td style="${bought ? 'text-decoration:line-through' : ''}"><strong>${g.item}</strong></td>
             <td>${g.qty || '—'}</td>
             <td>${g.shopper || '—'}</td>
+            <td style="max-width:180px;font-size:.78rem;color:#94a3b8">${g.notes || '—'}</td>
             <td class="right"><button class="btn-danger btn-sm" onclick="removeGrocery(${i})">✕</button></td>
         </tr>`;
     });
@@ -315,9 +317,9 @@ function renderGrocery() {
 async function addGroceryItem() {
     const item = $('g-item').value.trim();
     if (!item) { toast('Enter item name'); return; }
-    _trip.grocery_list.push({ item, qty: $('g-qty').value, shopper: $('g-shopper').value, purchased: false });
+    _trip.grocery_list.push({ item, qty: $('g-qty').value, shopper: $('g-shopper').value, notes: $('g-notes').value, purchased: false });
     await postJSON('/api/grocery', _trip.grocery_list);
-    $('g-item').value = ''; $('g-qty').value = ''; $('g-shopper').value = '';
+    $('g-item').value = ''; $('g-qty').value = ''; $('g-shopper').value = ''; $('g-notes').value = '';
     renderGrocery();
     toast('🛒 Item added!');
 }
@@ -450,12 +452,12 @@ function csvEscape(val) {
 function downloadCSV(type) {
     let csv = '', filename = '';
     if (type === 'meals') {
-        csv = 'Item Name,Assigned To\n';
-        (_trip.meals || []).forEach(m => { csv += `${csvEscape(m.name)},${csvEscape(m.cook)}\n`; });
+        csv = 'Item Name,Assigned To,Notes\n';
+        (_trip.meals || []).forEach(m => { csv += `${csvEscape(m.name)},${csvEscape(m.cook)},${csvEscape(m.notes)}\n`; });
         filename = 'food-menu.csv';
     } else if (type === 'grocery') {
-        csv = 'Item,Quantity,Shopper,Purchased\n';
-        (_trip.grocery_list || []).forEach(g => { csv += `${csvEscape(g.item)},${csvEscape(g.qty)},${csvEscape(g.shopper)},${g.purchased ? 'Yes' : 'No'}\n`; });
+        csv = 'Item,Quantity,Shopper,Notes,Purchased\n';
+        (_trip.grocery_list || []).forEach(g => { csv += `${csvEscape(g.item)},${csvEscape(g.qty)},${csvEscape(g.shopper)},${csvEscape(g.notes)},${g.purchased ? 'Yes' : 'No'}\n`; });
         filename = 'grocery-list.csv';
     }
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -480,7 +482,7 @@ function uploadCSV(type, input) {
         if (type === 'meals') {
             rows.forEach(line => {
                 const cols = parseCSVLine(line);
-                if (cols[0]) { _trip.meals.push({ name: cols[0], cook: cols[1] || '' }); count++; }
+                if (cols[0]) { _trip.meals.push({ name: cols[0], cook: cols[1] || '', notes: cols[2] || '' }); count++; }
             });
             await postJSON('/api/meals', { meals: _trip.meals });
             renderMeals();
@@ -488,7 +490,7 @@ function uploadCSV(type, input) {
             rows.forEach(line => {
                 const cols = parseCSVLine(line);
                 if (cols[0]) {
-                    _trip.grocery_list.push({ item: cols[0], qty: cols[1] || '', shopper: cols[2] || '', purchased: (cols[3] || '').toLowerCase() === 'yes' });
+                    _trip.grocery_list.push({ item: cols[0], qty: cols[1] || '', shopper: cols[2] || '', notes: cols[3] || '', purchased: (cols[4] || '').toLowerCase() === 'yes' });
                     count++;
                 }
             });

@@ -157,11 +157,12 @@
         <div class="form-row">
             <div class="form-group"><label>Item Name</label><input type="text" id="m-name" placeholder="Tacos, Pasta, Salad, ..."></div>
             <div class="form-group"><label>Assigned To</label><input type="text" id="m-cook" placeholder="Alice, Bob"></div>
+            <div class="form-group"><label>Notes</label><input type="text" id="m-notes" placeholder="Any notes..."></div>
         </div>
         <div class="csv-actions">
             <button class="btn-primary" onclick="addMeal()">➕ Add Item</button>
-            <button class="btn-accent" onclick="downloadCSV('meals')">⬇️ Download CSV</button>
-            <button class="btn-accent" onclick="document.getElementById('meals-upload').click()">⬆️ Upload CSV</button>
+            <button class="btn-accent" onclick="downloadCSV('meals')">⬇️ Download</button>
+            <button class="btn-accent" onclick="document.getElementById('meals-upload').click()">⬆️ Upload</button>
             <input type="file" id="meals-upload" accept=".csv" onchange="uploadCSV('meals', this)" hidden>
         </div>
     </div>
@@ -179,11 +180,12 @@
             <div class="form-group"><label>Item Name</label><input type="text" id="g-item" placeholder="Ground Beef"></div>
             <div class="form-group"><label>Quantity</label><input type="text" id="g-qty" placeholder="3 lbs"></div>
             <div class="form-group"><label>Shopper</label><input type="text" id="g-shopper" placeholder="Bob"></div>
+            <div class="form-group"><label>Notes</label><input type="text" id="g-notes" placeholder="Any notes..."></div>
         </div>
         <div class="csv-actions">
             <button class="btn-primary" onclick="addGroceryItem()">➕ Add Item</button>
-            <button class="btn-accent" onclick="downloadCSV('grocery')">⬇️ Download CSV</button>
-            <button class="btn-accent" onclick="document.getElementById('grocery-upload').click()">⬆️ Upload CSV</button>
+            <button class="btn-accent" onclick="downloadCSV('grocery')">⬇️ Download</button>
+            <button class="btn-accent" onclick="document.getElementById('grocery-upload').click()">⬆️ Upload</button>
             <input type="file" id="grocery-upload" accept=".csv" onchange="uploadCSV('grocery', this)" hidden>
         </div>
     </div>
