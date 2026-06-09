@@ -146,6 +146,9 @@ select{cursor:pointer}
 .status-yellow{background:#422006;color:#fde68a;border:1px solid #78350f}
 .status-green{background:#052e16;color:#86efac;border:1px solid #14532d}
 
+/* ── List header (Delete All) ── */
+.list-header{display:flex;justify-content:flex-end;align-items:center;margin-bottom:8px}
+
 /* ── Sub-tabs (Essentials) ── */
 .sub-tabs{display:flex;gap:6px;margin-bottom:20px}
 .sub-tab{background:#111827;color:#94a3b8;border:1px solid #1e293b;padding:10px 20px;border-radius:10px;font-size:.85rem;font-weight:700;cursor:pointer;transition:all .15s}

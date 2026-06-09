@@ -211,7 +211,8 @@ function renderTravelers() {
     const list = _trip.travelers || [];
     $('traveler-count').textContent = list.length;
     if (!list.length) { $('travelers-list').innerHTML = '<p class="muted">No travelers added yet</p>'; return; }
-    let html = `<table class="list-table"><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Emergency</th><th></th></tr></thead><tbody>`;
+    let html = `<div class="list-header"><span></span><button class="btn-danger btn-sm" onclick="deleteAll('travelers')">🗑️ Delete All</button></div>`;
+    html += `<table class="list-table"><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Emergency</th><th></th></tr></thead><tbody>`;
     list.forEach((t, i) => {
         html += `<tr>
             <td><strong>${t.name}</strong></td><td>${t.phone || '—'}</td>
@@ -256,7 +257,8 @@ function renderMeals() {
     const list = _trip.meals || [];
     $('meals-count').textContent = list.length;
     if (!list.length) { $('meals-list').innerHTML = '<p class="muted">No items yet</p>'; return; }
-    let html = `<table class="list-table"><thead><tr><th>Item</th><th>Assigned To</th><th>Notes</th><th></th></tr></thead><tbody>`;
+    let html = `<div class="list-header"><span></span><button class="btn-danger btn-sm" onclick="deleteAll('meals')">🗑️ Delete All</button></div>`;
+    html += `<table class="list-table"><thead><tr><th>Item</th><th>Assigned To</th><th>Notes</th><th></th></tr></thead><tbody>`;
     list.forEach((m, i) => {
         html += `<tr>
             <td><strong>${m.name}</strong></td>
@@ -304,7 +306,8 @@ function renderHomeList() {
     const list = (_trip.home_list || []);
     $('home-count').textContent = list.length;
     if (!list.length) { $('home-list').innerHTML = '<p class="muted">No items yet</p>'; return; }
-    let html = `<table class="list-table"><thead><tr><th>✓</th><th>Item</th><th>Qty</th><th>Assigned To</th><th>Notes</th><th></th></tr></thead><tbody>`;
+    let html = `<div class="list-header"><span></span><button class="btn-danger btn-sm" onclick="deleteAll('home')">🗑️ Delete All</button></div>`;
+    html += `<table class="list-table"><thead><tr><th>✓</th><th>Item</th><th>Qty</th><th>Assigned To</th><th>Notes</th><th></th></tr></thead><tbody>`;
     list.forEach((h, i) => {
         const packed = h.packed;
         html += `<tr style="${packed ? 'opacity:.55' : ''}">
@@ -361,7 +364,8 @@ function renderGrocery() {
     const list = _trip.grocery_list || [];
     $('grocery-count').textContent = list.length;
     if (!list.length) { $('grocery-list').innerHTML = '<p class="muted">No items yet</p>'; return; }
-    let html = `<table class="list-table"><thead><tr><th>Item</th><th>Qty</th><th>Shopper</th><th>Status</th><th>Notes</th><th></th></tr></thead><tbody>`;
+    let html = `<div class="list-header"><span></span><button class="btn-danger btn-sm" onclick="deleteAll('grocery')">🗑️ Delete All</button></div>`;
+    html += `<table class="list-table"><thead><tr><th>Item</th><th>Qty</th><th>Shopper</th><th>Status</th><th>Notes</th><th></th></tr></thead><tbody>`;
     list.forEach((g, i) => {
         const status = g.status || 'Need to Buy';
         const statusClass = { 'Need to Buy': 'status-red', 'In Cart': 'status-yellow', 'Purchased': 'status-green' }[status] || 'status-red';
@@ -425,7 +429,7 @@ function renderItinerary() {
         if (!byDate[d]) byDate[d] = [];
         byDate[d].push(item);
     });
-    let html = '';
+    let html = `<div class="list-header"><span></span><button class="btn-danger btn-sm" onclick="deleteAll('itinerary')">🗑️ Delete All</button></div>`;
     for (const [date, items] of Object.entries(byDate)) {
         const label = date !== 'Unscheduled' ? new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) : 'Unscheduled';
         html += `<div class="itin-day"><div class="itin-day-header">📅 ${label}</div>`;
@@ -603,6 +607,36 @@ function parseCSVLine(line) {
     }
     result.push(cur.trim());
     return result;
+}
+
+// ══════════════════════════════════════
+// DELETE ALL
+// ══════════════════════════════════════
+
+async function deleteAll(type) {
+    if (!confirm(`Delete all items from this list?`)) return;
+    if (type === 'travelers') {
+        _trip.travelers = [];
+        await postJSON('/api/travelers', []);
+        renderTravelers();
+    } else if (type === 'meals') {
+        _trip.meals = [];
+        await postJSON('/api/meals', { meals: [] });
+        renderMeals();
+    } else if (type === 'home') {
+        _trip.home_list = [];
+        await postJSON('/api/homelist', []);
+        renderHomeList();
+    } else if (type === 'grocery') {
+        _trip.grocery_list = [];
+        await postJSON('/api/grocery', []);
+        renderGrocery();
+    } else if (type === 'itinerary') {
+        _trip.itinerary = [];
+        await postJSON('/api/itinerary', []);
+        renderItinerary();
+    }
+    toast('🗑️ All items deleted');
 }
 
 // ── Boot ──
