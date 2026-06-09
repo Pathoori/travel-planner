@@ -146,6 +146,15 @@ select{cursor:pointer}
 .status-yellow{background:#422006;color:#fde68a;border:1px solid #78350f}
 .status-green{background:#052e16;color:#86efac;border:1px solid #14532d}
 
+/* ── Row actions (edit/delete buttons) ── */
+.row-actions{display:flex;gap:4px;align-items:center;white-space:nowrap}
+.btn-edit{background:none;border:1px solid #334155;color:#60a5fa;padding:4px 8px;border-radius:5px;font-size:.72rem;cursor:pointer;font-weight:600}
+.btn-edit:hover{background:#1e293b;border-color:#60a5fa}
+.btn-save{background:#052e16;border:1px solid #14532d;color:#86efac;padding:4px 10px;border-radius:5px;font-size:.72rem;cursor:pointer;font-weight:700}
+.btn-save:hover{background:#14532d;color:#fff}
+.edit-input{width:100%;padding:6px 8px;background:#0f172a;border:1px solid #3b82f6;border-radius:6px;color:#e2e8f0;font-size:.82rem}
+.edit-input:focus{outline:none;border-color:#60a5fa;box-shadow:0 0 0 2px rgba(59,130,246,.2)}
+
 /* ── List header (Delete All) ── */
 .list-header{display:flex;justify-content:flex-end;align-items:center;margin-bottom:8px}
 

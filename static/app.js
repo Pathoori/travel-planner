@@ -214,10 +214,10 @@ function renderTravelers() {
     let html = `<div class="list-header"><span></span><button class="btn-danger btn-sm" onclick="deleteAll('travelers')">🗑️ Delete All</button></div>`;
     html += `<table class="list-table"><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Emergency</th><th></th></tr></thead><tbody>`;
     list.forEach((t, i) => {
-        html += `<tr>
+        html += `<tr id="row-traveler-${i}">
             <td><strong>${t.name}</strong></td><td>${t.phone || '—'}</td>
             <td>${t.email || '—'}</td><td>${t.emergency || '—'}</td>
-            <td class="right"><button class="btn-danger btn-sm" onclick="removeTraveler(${i})">✕</button></td>
+            <td class="right row-actions"><button class="btn-edit btn-sm" onclick="editTraveler(${i})">✏️</button><button class="btn-danger btn-sm" onclick="removeTraveler(${i})">✕</button></td>
         </tr>`;
     });
     html += '</tbody></table>';
@@ -260,11 +260,11 @@ function renderMeals() {
     let html = `<div class="list-header"><span></span><button class="btn-danger btn-sm" onclick="deleteAll('meals')">🗑️ Delete All</button></div>`;
     html += `<table class="list-table"><thead><tr><th>Item</th><th>Assigned To</th><th>Notes</th><th></th></tr></thead><tbody>`;
     list.forEach((m, i) => {
-        html += `<tr>
+        html += `<tr id="row-meal-${i}">
             <td><strong>${m.name}</strong></td>
             <td>${m.cook || '—'}</td>
             <td style="max-width:180px;font-size:.78rem;color:#94a3b8">${m.notes || '—'}</td>
-            <td class="right"><button class="btn-danger btn-sm" onclick="removeMeal(${i})">✕</button></td>
+            <td class="right row-actions"><button class="btn-edit btn-sm" onclick="editMeal(${i})">✏️</button><button class="btn-danger btn-sm" onclick="removeMeal(${i})">✕</button></td>
         </tr>`;
     });
     html += '</tbody></table>';
@@ -310,13 +310,13 @@ function renderHomeList() {
     html += `<table class="list-table"><thead><tr><th>✓</th><th>Item</th><th>Qty</th><th>Assigned To</th><th>Notes</th><th></th></tr></thead><tbody>`;
     list.forEach((h, i) => {
         const packed = h.packed;
-        html += `<tr style="${packed ? 'opacity:.55' : ''}">
+        html += `<tr id="row-home-${i}" style="${packed ? 'opacity:.55' : ''}">
             <td><button class="check-btn ${packed ? 'checked' : ''}" onclick="toggleHomePacked(${i})">${packed ? '✓' : ''}</button></td>
             <td style="${packed ? 'text-decoration:line-through' : ''}"><strong>${h.item}</strong></td>
             <td>${h.qty || '—'}</td>
             <td>${h.person || '—'}</td>
             <td style="max-width:180px;font-size:.78rem;color:#94a3b8">${h.notes || '—'}</td>
-            <td class="right"><button class="btn-danger btn-sm" onclick="removeHomeItem(${i})">✕</button></td>
+            <td class="right row-actions"><button class="btn-edit btn-sm" onclick="editHomeItem(${i})">✏️</button><button class="btn-danger btn-sm" onclick="removeHomeItem(${i})">✕</button></td>
         </tr>`;
     });
     html += '</tbody></table>';
@@ -370,13 +370,13 @@ function renderGrocery() {
         const status = g.status || 'Need to Buy';
         const statusClass = { 'Need to Buy': 'status-red', 'In Cart': 'status-yellow', 'Purchased': 'status-green' }[status] || 'status-red';
         const done = status === 'Purchased';
-        html += `<tr style="${done ? 'opacity:.55' : ''}">
+        html += `<tr id="row-grocery-${i}" style="${done ? 'opacity:.55' : ''}">
             <td style="${done ? 'text-decoration:line-through' : ''}"><strong>${g.item}</strong></td>
             <td>${g.qty || '—'}</td>
             <td>${g.shopper || '—'}</td>
             <td><button class="status-badge ${statusClass}" onclick="cycleGroceryStatus(${i})">${status}</button></td>
             <td style="max-width:180px;font-size:.78rem;color:#94a3b8">${g.notes || '—'}</td>
-            <td class="right"><button class="btn-danger btn-sm" onclick="removeGrocery(${i})">✕</button></td>
+            <td class="right row-actions"><button class="btn-edit btn-sm" onclick="editGrocery(${i})">✏️</button><button class="btn-danger btn-sm" onclick="removeGrocery(${i})">✕</button></td>
         </tr>`;
     });
     html += '</tbody></table>';
@@ -435,13 +435,13 @@ function renderItinerary() {
         html += `<div class="itin-day"><div class="itin-day-header">📅 ${label}</div>`;
         items.forEach((item, idx) => {
             const globalIdx = list.indexOf(item);
-            html += `<div class="itin-item">
+            html += `<div class="itin-item" id="row-itin-${globalIdx}">
                 <div class="itin-time">${item.time || '—'}</div>
                 <div class="itin-activity">
                     <strong>${item.activity}</strong>
                     ${item.notes ? `<div class="itin-notes">${item.notes}</div>` : ''}
                 </div>
-                <button class="btn-danger btn-sm" onclick="removeItinerary(${globalIdx})">✕</button>
+                <div class="row-actions"><button class="btn-edit btn-sm" onclick="editItinerary(${globalIdx})">✏️</button><button class="btn-danger btn-sm" onclick="removeItinerary(${globalIdx})">✕</button></div>
             </div>`;
         });
         html += '</div>';
@@ -607,6 +607,99 @@ function parseCSVLine(line) {
     }
     result.push(cur.trim());
     return result;
+}
+
+// ══════════════════════════════════════
+// INLINE EDIT (all lists)
+// ══════════════════════════════════════
+
+function _inp(val, id) { return `<input class="edit-input" id="${id}" value="${(val||'').replace(/"/g,'&quot;')}">`; }
+
+// ── Edit Travelers ──
+function editTraveler(i) {
+    const t = _trip.travelers[i];
+    const row = $('row-traveler-' + i);
+    row.innerHTML = `
+        <td>${_inp(t.name,'ed-t-name')}</td><td>${_inp(t.phone,'ed-t-phone')}</td>
+        <td>${_inp(t.email,'ed-t-email')}</td><td>${_inp(t.emergency,'ed-t-emerg')}</td>
+        <td class="right row-actions"><button class="btn-save btn-sm" onclick="saveTravelerEdit(${i})">💾</button><button class="btn-accent btn-sm" onclick="renderTravelers()">✖</button></td>`;
+}
+async function saveTravelerEdit(i) {
+    _trip.travelers[i] = { name: $('ed-t-name').value, phone: $('ed-t-phone').value, email: $('ed-t-email').value, emergency: $('ed-t-emerg').value };
+    await postJSON('/api/travelers', _trip.travelers);
+    renderTravelers();
+    toast('✅ Traveler updated');
+}
+
+// ── Edit Meals ──
+function editMeal(i) {
+    const m = _trip.meals[i];
+    const row = $('row-meal-' + i);
+    row.innerHTML = `
+        <td>${_inp(m.name,'ed-m-name')}</td><td>${_inp(m.cook,'ed-m-cook')}</td>
+        <td>${_inp(m.notes,'ed-m-notes')}</td>
+        <td class="right row-actions"><button class="btn-save btn-sm" onclick="saveMealEdit(${i})">💾</button><button class="btn-accent btn-sm" onclick="renderMeals()">✖</button></td>`;
+}
+async function saveMealEdit(i) {
+    _trip.meals[i] = { name: $('ed-m-name').value, cook: $('ed-m-cook').value, notes: $('ed-m-notes').value };
+    await postJSON('/api/meals', { meals: _trip.meals });
+    renderMeals();
+    toast('✅ Menu item updated');
+}
+
+// ── Edit Home List ──
+function editHomeItem(i) {
+    const h = _trip.home_list[i];
+    const row = $('row-home-' + i);
+    row.style.opacity = '1';
+    row.innerHTML = `
+        <td></td>
+        <td>${_inp(h.item,'ed-h-item')}</td><td>${_inp(h.qty,'ed-h-qty')}</td>
+        <td>${_inp(h.person,'ed-h-person')}</td><td>${_inp(h.notes,'ed-h-notes')}</td>
+        <td class="right row-actions"><button class="btn-save btn-sm" onclick="saveHomeEdit(${i})">💾</button><button class="btn-accent btn-sm" onclick="renderHomeList()">✖</button></td>`;
+}
+async function saveHomeEdit(i) {
+    _trip.home_list[i] = { ..._trip.home_list[i], item: $('ed-h-item').value, qty: $('ed-h-qty').value, person: $('ed-h-person').value, notes: $('ed-h-notes').value };
+    await postJSON('/api/homelist', _trip.home_list);
+    renderHomeList();
+    toast('✅ Item updated');
+}
+
+// ── Edit Grocery ──
+function editGrocery(i) {
+    const g = _trip.grocery_list[i];
+    const st = g.status || 'Need to Buy';
+    const row = $('row-grocery-' + i);
+    row.style.opacity = '1';
+    row.innerHTML = `
+        <td>${_inp(g.item,'ed-g-item')}</td><td>${_inp(g.qty,'ed-g-qty')}</td>
+        <td>${_inp(g.shopper,'ed-g-shopper')}</td>
+        <td><select class="edit-input" id="ed-g-status"><option ${st==='Need to Buy'?'selected':''}>Need to Buy</option><option ${st==='In Cart'?'selected':''}>In Cart</option><option ${st==='Purchased'?'selected':''}>Purchased</option></select></td>
+        <td>${_inp(g.notes,'ed-g-notes')}</td>
+        <td class="right row-actions"><button class="btn-save btn-sm" onclick="saveGroceryEdit(${i})">💾</button><button class="btn-accent btn-sm" onclick="renderGrocery()">✖</button></td>`;
+}
+async function saveGroceryEdit(i) {
+    const st = $('ed-g-status').value;
+    _trip.grocery_list[i] = { item: $('ed-g-item').value, qty: $('ed-g-qty').value, shopper: $('ed-g-shopper').value, status: st, notes: $('ed-g-notes').value, purchased: st === 'Purchased' };
+    await postJSON('/api/grocery', _trip.grocery_list);
+    renderGrocery();
+    toast('✅ Item updated');
+}
+
+// ── Edit Itinerary ──
+function editItinerary(i) {
+    const it = _trip.itinerary[i];
+    const el = $('row-itin-' + i);
+    el.innerHTML = `
+        <div><input class="edit-input" type="date" id="ed-i-date" value="${it.date||''}"> <input class="edit-input" type="time" id="ed-i-time" value="${it.time||''}"></div>
+        <div style="flex:1"><input class="edit-input" id="ed-i-activity" value="${(it.activity||'').replace(/"/g,'&quot;')}" placeholder="Activity"><input class="edit-input" id="ed-i-notes" value="${(it.notes||'').replace(/"/g,'&quot;')}" placeholder="Notes" style="margin-top:6px"></div>
+        <div class="row-actions"><button class="btn-save btn-sm" onclick="saveItineraryEdit(${i})">💾</button><button class="btn-accent btn-sm" onclick="renderItinerary()">✖</button></div>`;
+}
+async function saveItineraryEdit(i) {
+    _trip.itinerary[i] = { date: $('ed-i-date').value, time: $('ed-i-time').value, activity: $('ed-i-activity').value, notes: $('ed-i-notes').value };
+    await postJSON('/api/itinerary', _trip.itinerary);
+    renderItinerary();
+    toast('✅ Activity updated');
 }
 
 // ══════════════════════════════════════
