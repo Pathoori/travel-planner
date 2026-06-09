@@ -205,15 +205,39 @@ document.addEventListener('DOMContentLoaded', () => {
 async function loadTravelers() {
     _trip.travelers = await api('/api/travelers');
     renderTravelers();
+    populateTravelerDropdowns();
+}
+
+function _getFilter(id) { const el = $(id); return el ? el.value.toLowerCase().trim() : ''; }
+function _getSort(id) { const el = $(id); return el ? el.value : 'added'; }
+function _matchesText(query, ...fields) { if (!query) return true; return fields.some(f => (f || '').toLowerCase().includes(query)); }
+
+// ── Populate traveler dropdowns ──
+function populateTravelerDropdowns() {
+    const names = (_trip.travelers || []).map(t => t.name).filter(Boolean).sort();
+    document.querySelectorAll('.traveler-dropdown').forEach(sel => {
+        const current = sel.value;
+        sel.innerHTML = '<option value="">— Select —</option>' + names.map(n => `<option value="${n}"${n === current ? ' selected' : ''}>${n}</option>`).join('');
+    });
 }
 
 function renderTravelers() {
     const list = _trip.travelers || [];
     $('traveler-count').textContent = list.length;
     if (!list.length) { $('travelers-list').innerHTML = '<p class="muted">No travelers added yet</p>'; return; }
-    let html = `<div class="list-header"><span></span><button class="btn-danger btn-sm" onclick="deleteAll('travelers')">🗑️ Delete All</button></div>`;
+    const query = _getFilter('filter-travelers');
+    const sort = _getSort('sort-travelers');
+    // Build indexed list for filtering/sorting
+    let items = list.map((t, i) => ({ ...t, _i: i }));
+    if (query) items = items.filter(t => _matchesText(query, t.name, t.phone, t.email, t.emergency));
+    if (sort === 'name-asc') items.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    else if (sort === 'name-desc') items.sort((a, b) => (b.name || '').localeCompare(a.name || ''));
+    else if (sort === 'email-asc') items.sort((a, b) => (a.email || '').localeCompare(b.email || ''));
+    let html = `<div class="list-header"><span class="filter-count">${items.length} of ${list.length}</span><button class="btn-danger btn-sm" onclick="deleteAll('travelers')">🗑️ Delete All</button></div>`;
+    if (!items.length) { html += '<p class="muted">No matching travelers</p>'; $('travelers-list').innerHTML = html; return; }
     html += `<table class="list-table"><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Emergency</th><th></th></tr></thead><tbody>`;
-    list.forEach((t, i) => {
+    items.forEach(t => {
+        const i = t._i;
         html += `<tr id="row-traveler-${i}">
             <td><strong>${t.name}</strong></td><td>${t.phone || '—'}</td>
             <td>${t.email || '—'}</td><td>${t.emergency || '—'}</td>
@@ -233,6 +257,7 @@ async function addTraveler() {
     _trip.travelers = travelers;
     $('t-name').value = ''; $('t-phone').value = ''; $('t-email').value = ''; $('t-emergency').value = '';
     renderTravelers();
+    populateTravelerDropdowns();
     toast('👤 Traveler added!');
 }
 
@@ -240,6 +265,7 @@ async function removeTraveler(i) {
     _trip.travelers.splice(i, 1);
     await postJSON('/api/travelers', _trip.travelers);
     renderTravelers();
+    populateTravelerDropdowns();
     toast('Traveler removed');
 }
 
@@ -257,9 +283,18 @@ function renderMeals() {
     const list = _trip.meals || [];
     $('meals-count').textContent = list.length;
     if (!list.length) { $('meals-list').innerHTML = '<p class="muted">No items yet</p>'; return; }
-    let html = `<div class="list-header"><span></span><button class="btn-danger btn-sm" onclick="deleteAll('meals')">🗑️ Delete All</button></div>`;
+    const query = _getFilter('filter-meals');
+    const sort = _getSort('sort-meals');
+    let items = list.map((m, i) => ({ ...m, _i: i }));
+    if (query) items = items.filter(m => _matchesText(query, m.name, m.cook, m.notes));
+    if (sort === 'name-asc') items.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    else if (sort === 'name-desc') items.sort((a, b) => (b.name || '').localeCompare(a.name || ''));
+    else if (sort === 'cook-asc') items.sort((a, b) => (a.cook || '').localeCompare(b.cook || ''));
+    let html = `<div class="list-header"><span class="filter-count">${items.length} of ${list.length}</span><button class="btn-danger btn-sm" onclick="deleteAll('meals')">🗑️ Delete All</button></div>`;
+    if (!items.length) { html += '<p class="muted">No matching items</p>'; $('meals-list').innerHTML = html; return; }
     html += `<table class="list-table"><thead><tr><th>Item</th><th>Assigned To</th><th>Notes</th><th></th></tr></thead><tbody>`;
-    list.forEach((m, i) => {
+    items.forEach(m => {
+        const i = m._i;
         html += `<tr id="row-meal-${i}">
             <td><strong>${m.name}</strong></td>
             <td>${m.cook || '—'}</td>
@@ -306,9 +341,21 @@ function renderHomeList() {
     const list = (_trip.home_list || []);
     $('home-count').textContent = list.length;
     if (!list.length) { $('home-list').innerHTML = '<p class="muted">No items yet</p>'; return; }
-    let html = `<div class="list-header"><span></span><button class="btn-danger btn-sm" onclick="deleteAll('home')">🗑️ Delete All</button></div>`;
+    const query = _getFilter('filter-home');
+    const sort = _getSort('sort-home');
+    const statusFilter = _getSort('filter-home-status');
+    let items = list.map((h, i) => ({ ...h, _i: i }));
+    if (query) items = items.filter(h => _matchesText(query, h.item, h.qty, h.person, h.notes));
+    if (statusFilter === 'packed') items = items.filter(h => h.packed);
+    else if (statusFilter === 'unpacked') items = items.filter(h => !h.packed);
+    if (sort === 'item-asc') items.sort((a, b) => (a.item || '').localeCompare(b.item || ''));
+    else if (sort === 'item-desc') items.sort((a, b) => (b.item || '').localeCompare(a.item || ''));
+    else if (sort === 'person-asc') items.sort((a, b) => (a.person || '').localeCompare(b.person || ''));
+    let html = `<div class="list-header"><span class="filter-count">${items.length} of ${list.length}</span><button class="btn-danger btn-sm" onclick="deleteAll('home')">🗑️ Delete All</button></div>`;
+    if (!items.length) { html += '<p class="muted">No matching items</p>'; $('home-list').innerHTML = html; return; }
     html += `<table class="list-table"><thead><tr><th>✓</th><th>Item</th><th>Qty</th><th>Assigned To</th><th>Notes</th><th></th></tr></thead><tbody>`;
-    list.forEach((h, i) => {
+    items.forEach(h => {
+        const i = h._i;
         const packed = h.packed;
         html += `<tr id="row-home-${i}" style="${packed ? 'opacity:.55' : ''}">
             <td><button class="check-btn ${packed ? 'checked' : ''}" onclick="toggleHomePacked(${i})">${packed ? '✓' : ''}</button></td>
@@ -364,11 +411,23 @@ function renderGrocery() {
     const list = _trip.grocery_list || [];
     $('grocery-count').textContent = list.length;
     if (!list.length) { $('grocery-list').innerHTML = '<p class="muted">No items yet</p>'; return; }
-    let html = `<div class="list-header"><span></span><button class="btn-danger btn-sm" onclick="deleteAll('grocery')">🗑️ Delete All</button></div>`;
+    const query = _getFilter('filter-grocery');
+    const sort = _getSort('sort-grocery');
+    const statusFilter = _getSort('filter-grocery-status');
+    let items = list.map((g, i) => ({ ...g, _i: i }));
+    if (query) items = items.filter(g => _matchesText(query, g.item, g.qty, g.shopper, g.notes));
+    if (statusFilter !== 'all') items = items.filter(g => (g.status || 'Need to Buy') === statusFilter);
+    if (sort === 'item-asc') items.sort((a, b) => (a.item || '').localeCompare(b.item || ''));
+    else if (sort === 'item-desc') items.sort((a, b) => (b.item || '').localeCompare(a.item || ''));
+    else if (sort === 'shopper-asc') items.sort((a, b) => (a.shopper || '').localeCompare(b.shopper || ''));
+    else if (sort === 'status-asc') { const ord = {'Need to Buy':0,'Purchased':1}; items.sort((a, b) => (ord[a.status||'Need to Buy']||0) - (ord[b.status||'Need to Buy']||0)); }
+    let html = `<div class="list-header"><span class="filter-count">${items.length} of ${list.length}</span><button class="btn-danger btn-sm" onclick="deleteAll('grocery')">🗑️ Delete All</button></div>`;
+    if (!items.length) { html += '<p class="muted">No matching items</p>'; $('grocery-list').innerHTML = html; return; }
     html += `<table class="list-table"><thead><tr><th>Item</th><th>Qty</th><th>Shopper</th><th>Status</th><th>Notes</th><th></th></tr></thead><tbody>`;
-    list.forEach((g, i) => {
+    items.forEach(g => {
+        const i = g._i;
         const status = g.status || 'Need to Buy';
-        const statusClass = { 'Need to Buy': 'status-red', 'In Cart': 'status-yellow', 'Purchased': 'status-green' }[status] || 'status-red';
+        const statusClass = { 'Need to Buy': 'status-red', 'Purchased': 'status-green' }[status] || 'status-red';
         const done = status === 'Purchased';
         html += `<tr id="row-grocery-${i}" style="${done ? 'opacity:.55' : ''}">
             <td style="${done ? 'text-decoration:line-through' : ''}"><strong>${g.item}</strong></td>
@@ -395,7 +454,7 @@ async function addGroceryItem() {
 }
 
 async function cycleGroceryStatus(i) {
-    const order = ['Need to Buy', 'In Cart', 'Purchased'];
+    const order = ['Need to Buy', 'Purchased'];
     const cur = _trip.grocery_list[i].status || 'Need to Buy';
     const next = order[(order.indexOf(cur) + 1) % order.length];
     _trip.grocery_list[i].status = next;
@@ -420,28 +479,38 @@ async function loadItinerary() {
 }
 
 function renderItinerary() {
-    const list = (_trip.itinerary || []).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
-    if (!list.length) { $('itinerary-list').innerHTML = '<p class="muted">No activities planned yet</p>'; return; }
+    const rawList = _trip.itinerary || [];
+    if (!rawList.length) { $('itinerary-list').innerHTML = '<p class="muted">No activities planned yet</p>'; return; }
+    const query = _getFilter('filter-itinerary');
+    const sort = _getSort('sort-itinerary');
+    // Build indexed list for filtering
+    let items = rawList.map((it, i) => ({ ...it, _i: i }));
+    if (query) items = items.filter(it => _matchesText(query, it.activity, it.notes, it.date, it.time));
+    // Sort
+    if (sort === 'date-asc') items.sort((a, b) => ((a.date || '') + (a.time || '')).localeCompare((b.date || '') + (b.time || '')));
+    else if (sort === 'date-desc') items.sort((a, b) => ((b.date || '') + (b.time || '')).localeCompare((a.date || '') + (a.time || '')));
+    else if (sort === 'activity-asc') items.sort((a, b) => (a.activity || '').localeCompare(b.activity || ''));
+    let html = `<div class="list-header"><span class="filter-count">${items.length} of ${rawList.length}</span><button class="btn-danger btn-sm" onclick="deleteAll('itinerary')">🗑️ Delete All</button></div>`;
+    if (!items.length) { html += '<p class="muted">No matching activities</p>'; $('itinerary-list').innerHTML = html; return; }
     // Group by date
     const byDate = {};
-    list.forEach(item => {
+    items.forEach(item => {
         const d = item.date || 'Unscheduled';
         if (!byDate[d]) byDate[d] = [];
         byDate[d].push(item);
     });
-    let html = `<div class="list-header"><span></span><button class="btn-danger btn-sm" onclick="deleteAll('itinerary')">🗑️ Delete All</button></div>`;
-    for (const [date, items] of Object.entries(byDate)) {
+    for (const [date, dayItems] of Object.entries(byDate)) {
         const label = date !== 'Unscheduled' ? new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) : 'Unscheduled';
         html += `<div class="itin-day"><div class="itin-day-header">📅 ${label}</div>`;
-        items.forEach((item, idx) => {
-            const globalIdx = list.indexOf(item);
-            html += `<div class="itin-item" id="row-itin-${globalIdx}">
+        dayItems.forEach(item => {
+            const i = item._i;
+            html += `<div class="itin-item" id="row-itin-${i}">
                 <div class="itin-time">${item.time || '—'}</div>
                 <div class="itin-activity">
                     <strong>${item.activity}</strong>
                     ${item.notes ? `<div class="itin-notes">${item.notes}</div>` : ''}
                 </div>
-                <div class="row-actions"><button class="btn-edit btn-sm" onclick="editItinerary(${globalIdx})">✏️</button><button class="btn-danger btn-sm" onclick="removeItinerary(${globalIdx})">✕</button></div>
+                <div class="row-actions"><button class="btn-edit btn-sm" onclick="editItinerary(${i})">✏️</button><button class="btn-danger btn-sm" onclick="removeItinerary(${i})">✕</button></div>
             </div>`;
         });
         html += '</div>';
@@ -614,6 +683,12 @@ function parseCSVLine(line) {
 // ══════════════════════════════════════
 
 function _inp(val, id) { return `<input class="edit-input" id="${id}" value="${(val||'').replace(/"/g,'&quot;')}">`; }
+function _travelerSelect(val, id) {
+    const names = (_trip.travelers || []).map(t => t.name).filter(Boolean).sort();
+    let opts = `<option value="">— Select —</option>`;
+    names.forEach(n => { opts += `<option value="${n}"${n === val ? ' selected' : ''}>${n}</option>`; });
+    return `<select class="edit-input" id="${id}">${opts}</select>`;
+}
 
 // ── Edit Travelers ──
 function editTraveler(i) {
@@ -628,6 +703,7 @@ async function saveTravelerEdit(i) {
     _trip.travelers[i] = { name: $('ed-t-name').value, phone: $('ed-t-phone').value, email: $('ed-t-email').value, emergency: $('ed-t-emerg').value };
     await postJSON('/api/travelers', _trip.travelers);
     renderTravelers();
+    populateTravelerDropdowns();
     toast('✅ Traveler updated');
 }
 
@@ -636,7 +712,7 @@ function editMeal(i) {
     const m = _trip.meals[i];
     const row = $('row-meal-' + i);
     row.innerHTML = `
-        <td>${_inp(m.name,'ed-m-name')}</td><td>${_inp(m.cook,'ed-m-cook')}</td>
+        <td>${_inp(m.name,'ed-m-name')}</td><td>${_travelerSelect(m.cook,'ed-m-cook')}</td>
         <td>${_inp(m.notes,'ed-m-notes')}</td>
         <td class="right row-actions"><button class="btn-save btn-sm" onclick="saveMealEdit(${i})">💾</button><button class="btn-accent btn-sm" onclick="renderMeals()">✖</button></td>`;
 }
@@ -655,7 +731,7 @@ function editHomeItem(i) {
     row.innerHTML = `
         <td></td>
         <td>${_inp(h.item,'ed-h-item')}</td><td>${_inp(h.qty,'ed-h-qty')}</td>
-        <td>${_inp(h.person,'ed-h-person')}</td><td>${_inp(h.notes,'ed-h-notes')}</td>
+        <td>${_travelerSelect(h.person,'ed-h-person')}</td><td>${_inp(h.notes,'ed-h-notes')}</td>
         <td class="right row-actions"><button class="btn-save btn-sm" onclick="saveHomeEdit(${i})">💾</button><button class="btn-accent btn-sm" onclick="renderHomeList()">✖</button></td>`;
 }
 async function saveHomeEdit(i) {
@@ -673,8 +749,8 @@ function editGrocery(i) {
     row.style.opacity = '1';
     row.innerHTML = `
         <td>${_inp(g.item,'ed-g-item')}</td><td>${_inp(g.qty,'ed-g-qty')}</td>
-        <td>${_inp(g.shopper,'ed-g-shopper')}</td>
-        <td><select class="edit-input" id="ed-g-status"><option ${st==='Need to Buy'?'selected':''}>Need to Buy</option><option ${st==='In Cart'?'selected':''}>In Cart</option><option ${st==='Purchased'?'selected':''}>Purchased</option></select></td>
+        <td>${_travelerSelect(g.shopper,'ed-g-shopper')}</td>
+        <td><select class="edit-input" id="ed-g-status"><option ${st==='Need to Buy'?'selected':''}>Need to Buy</option><option ${st==='Purchased'?'selected':''}>Purchased</option></select></td>
         <td>${_inp(g.notes,'ed-g-notes')}</td>
         <td class="right row-actions"><button class="btn-save btn-sm" onclick="saveGroceryEdit(${i})">💾</button><button class="btn-accent btn-sm" onclick="renderGrocery()">✖</button></td>`;
 }
@@ -712,6 +788,7 @@ async function deleteAll(type) {
         _trip.travelers = [];
         await postJSON('/api/travelers', []);
         renderTravelers();
+        populateTravelerDropdowns();
     } else if (type === 'meals') {
         _trip.meals = [];
         await postJSON('/api/meals', { meals: [] });
@@ -732,6 +809,81 @@ async function deleteAll(type) {
     toast('🗑️ All items deleted');
 }
 
+// ══════════════════════════════════════
+// PHOTO GALLERY
+// ══════════════════════════════════════
+
+async function loadGallery() {
+    _trip.gallery = await api('/api/gallery');
+    renderGallery();
+}
+
+function renderGallery() {
+    const photos = _trip.gallery || [];
+    $('photo-count').textContent = photos.length;
+    if (!photos.length) {
+        $('photo-gallery').innerHTML = '<p class="muted">No photos yet — upload some memories!</p>';
+        return;
+    }
+    let html = '';
+    photos.forEach((p, i) => {
+        html += `<div class="photo-card" onclick="openLightbox('${p.url}')">
+            <img src="${p.url}" alt="${p.name || 'Trip photo'}" loading="lazy">
+            <div class="photo-overlay">
+                <span class="photo-caption">${p.name || ''}</span>
+                <button class="photo-delete" onclick="event.stopPropagation();deletePhoto(${i})" title="Delete">✕</button>
+            </div>
+        </div>`;
+    });
+    $('photo-gallery').innerHTML = html;
+}
+
+async function uploadGalleryPhotos(files) {
+    if (!files || !files.length) return;
+    let count = 0;
+    for (const file of files) {
+        if (!file.type.startsWith('image/')) continue;
+        const fd = new FormData();
+        fd.append('file', file);
+        try {
+            const r = await fetch('/api/gallery/upload', { method: 'POST', body: fd });
+            const d = await r.json();
+            if (d.url) {
+                if (!_trip.gallery) _trip.gallery = [];
+                _trip.gallery.push({ url: d.url, name: file.name });
+                count++;
+            }
+        } catch (e) { console.error('Upload error:', e); }
+    }
+    if (count) {
+        await postJSON('/api/gallery', _trip.gallery);
+        renderGallery();
+        toast(`📸 ${count} photo${count > 1 ? 's' : ''} uploaded!`);
+    }
+}
+
+async function deletePhoto(i) {
+    if (!confirm('Delete this photo?')) return;
+    _trip.gallery.splice(i, 1);
+    await postJSON('/api/gallery', _trip.gallery);
+    renderGallery();
+    toast('🗑️ Photo deleted');
+}
+
+function openLightbox(url) {
+    let lb = document.querySelector('.lightbox');
+    if (!lb) {
+        lb = document.createElement('div');
+        lb.className = 'lightbox';
+        lb.innerHTML = '<button class="lightbox-close">✕</button><img>';
+        lb.querySelector('.lightbox-close').addEventListener('click', () => lb.classList.remove('active'));
+        lb.addEventListener('click', (e) => { if (e.target === lb) lb.classList.remove('active'); });
+        document.body.appendChild(lb);
+    }
+    lb.querySelector('img').src = url;
+    lb.classList.add('active');
+}
+
 // ── Boot ──
 document.addEventListener('DOMContentLoaded', async () => {
     await loadTrip();
@@ -740,5 +892,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadGrocery();
     await loadHomeList();
     await loadItinerary();
+    await loadGallery();
     renderDashboard();
+
+    // Photo gallery upload zone
+    const dropZone = $('photo-drop-zone');
+    const galleryInput = $('gallery-upload');
+    if (dropZone && galleryInput) {
+        dropZone.addEventListener('click', () => galleryInput.click());
+        galleryInput.addEventListener('change', () => uploadGalleryPhotos(galleryInput.files));
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+        dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('drag-over'); uploadGalleryPhotos(e.dataTransfer.files); });
+    }
 });

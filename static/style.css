@@ -143,7 +143,6 @@ select{cursor:pointer}
 .status-badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:.72rem;font-weight:700;border:none;cursor:pointer;transition:all .15s;white-space:nowrap}
 .status-badge:hover{transform:scale(1.05);filter:brightness(1.2)}
 .status-red{background:#450a0a;color:#fca5a5;border:1px solid #7f1d1d}
-.status-yellow{background:#422006;color:#fde68a;border:1px solid #78350f}
 .status-green{background:#052e16;color:#86efac;border:1px solid #14532d}
 
 /* ── Row actions (edit/delete buttons) ── */
@@ -154,6 +153,16 @@ select{cursor:pointer}
 .btn-save:hover{background:#14532d;color:#fff}
 .edit-input{width:100%;padding:6px 8px;background:#0f172a;border:1px solid #3b82f6;border-radius:6px;color:#e2e8f0;font-size:.82rem}
 .edit-input:focus{outline:none;border-color:#60a5fa;box-shadow:0 0 0 2px rgba(59,130,246,.2)}
+
+/* ── List Filter/Sort Controls ── */
+.list-controls{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.filter-input{flex:1;min-width:180px;padding:9px 14px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0;font-size:.82rem;transition:border .15s}
+.filter-input:focus{outline:none;border-color:#3b82f6;box-shadow:0 0 0 2px rgba(59,130,246,.15)}
+.filter-input::placeholder{color:#475569}
+.sort-select{padding:9px 14px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#94a3b8;font-size:.78rem;font-weight:600;cursor:pointer;transition:border .15s;min-width:140px}
+.sort-select:focus{outline:none;border-color:#3b82f6}
+.sort-select:hover{border-color:#475569;color:#e2e8f0}
+.filter-count{font-size:.72rem;color:#64748b;font-weight:600;white-space:nowrap;padding:0 4px}
 
 /* ── List header (Delete All) ── */
 .list-header{display:flex;justify-content:flex-end;align-items:center;margin-bottom:8px}
@@ -172,6 +181,28 @@ select{cursor:pointer}
 /* ── Grocery header ── */
 .grocery-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:14px}
 .grocery-total{font-size:1rem;color:#22d3ee}
+
+/* ── Photo Gallery ── */
+.photo-upload-zone{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;background:#0f172a;border:2px dashed #334155;border-radius:12px;cursor:pointer;transition:all .2s;gap:10px}
+.photo-upload-zone:hover,.photo-upload-zone.drag-over{border-color:#3b82f6;background:#0f172a}
+.photo-drop-icon{font-size:2.5rem}
+.photo-drop-text{font-size:.88rem;color:#64748b;font-weight:600}
+.photo-upload-hint{font-size:.72rem;color:#475569;text-align:center;margin-top:8px}
+.photo-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.photo-card{position:relative;border-radius:10px;overflow:hidden;background:#0f172a;border:1px solid #1e293b;aspect-ratio:1;cursor:pointer;transition:all .2s}
+.photo-card:hover{border-color:#3b82f6;transform:scale(1.02);box-shadow:0 4px 16px rgba(59,130,246,.2)}
+.photo-card img{width:100%;height:100%;object-fit:cover}
+.photo-card .photo-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.7) 0%,transparent 50%);opacity:0;transition:opacity .2s;display:flex;align-items:flex-end;padding:10px}
+.photo-card:hover .photo-overlay{opacity:1}
+.photo-caption{font-size:.72rem;color:#e2e8f0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.photo-delete{background:#ef444488;border:none;color:#fff;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:.8rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s}
+.photo-delete:hover{background:#ef4444}
+/* Photo lightbox */
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:1000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.lightbox.active{opacity:1;pointer-events:all}
+.lightbox img{max-width:90vw;max-height:85vh;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.6)}
+.lightbox-close{position:absolute;top:20px;right:24px;background:#1e293b;border:1px solid #334155;color:#e2e8f0;width:40px;height:40px;border-radius:10px;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.lightbox-close:hover{background:#334155}
 
 /* ── Responsive ── */
 @media(max-width:1000px){

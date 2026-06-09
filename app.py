@@ -34,6 +34,7 @@ TRIP_DEFAULTS = {
     "itinerary": [],
     "saved_places": [],
     "home_list": [],
+    "gallery": [],
 }
 
 # ── Database setup (PostgreSQL on Render, JSON file locally) ──
@@ -224,6 +225,32 @@ def save_homelist():
     trip["home_list"] = request.get_json()
     _save(trip)
     return jsonify({"ok": True})
+
+
+# ── Gallery (Trip Photos) ──
+
+@app.route("/api/gallery", methods=["GET"])
+def get_gallery():
+    return jsonify(_load().get("gallery", []))
+
+
+@app.route("/api/gallery", methods=["POST"])
+def save_gallery():
+    trip = _load()
+    trip["gallery"] = request.get_json()
+    _save(trip)
+    return jsonify({"ok": True})
+
+
+@app.route("/api/gallery/upload", methods=["POST"])
+def upload_gallery_photo():
+    file = request.files.get("file")
+    if not file:
+        return jsonify({"error": "No file"}), 400
+    ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else "jpg"
+    fname = f"gallery_{uuid.uuid4().hex[:8]}.{ext}"
+    file.save(os.path.join(UPLOAD_DIR, fname))
+    return jsonify({"url": f"/uploads/{fname}"})
 
 
 # ── Saved Places ──

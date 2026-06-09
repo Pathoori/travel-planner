@@ -18,6 +18,7 @@
         <button class="nav-btn" data-tab="meals" onclick="switchTab('meals')">🍽️ Food Menu</button>
         <button class="nav-btn" data-tab="grocery" onclick="switchTab('grocery')">🧳 Essentials</button>
         <button class="nav-btn" data-tab="itinerary" onclick="switchTab('itinerary')">📅 Itinerary</button>
+        <button class="nav-btn" data-tab="photos" onclick="switchTab('photos')">📸 Photos</button>
     </div>
 </nav>
 
@@ -59,12 +60,12 @@
                 <span class="action-label">Add Traveler</span>
             </button>
             <button class="action-card" onclick="switchTab('meals')">
-                <span class="action-icon">🍳</span>
-                <span class="action-label">Plan Meal</span>
+                <span class="action-icon">🍽️</span>
+                <span class="action-label">Food Menu</span>
             </button>
             <button class="action-card" onclick="switchTab('grocery')">
-                <span class="action-icon">🛒</span>
-                <span class="action-label">Grocery Item</span>
+                <span class="action-icon">🧳</span>
+                <span class="action-label">Essentials</span>
             </button>
             <button class="action-card" onclick="switchTab('itinerary')">
                 <span class="action-icon">📅</span>
@@ -146,6 +147,15 @@
     </div>
     <div class="card">
         <h2>👥 Trip Roster (<span id="traveler-count">0</span>)</h2>
+        <div class="list-controls">
+            <input type="text" class="filter-input" id="filter-travelers" placeholder="🔍 Search travelers..." oninput="renderTravelers()">
+            <select class="sort-select" id="sort-travelers" onchange="renderTravelers()">
+                <option value="added">Sort: Added Order</option>
+                <option value="name-asc">Name A→Z</option>
+                <option value="name-desc">Name Z→A</option>
+                <option value="email-asc">Email A→Z</option>
+            </select>
+        </div>
         <div id="travelers-list"></div>
     </div>
 </section>
@@ -156,7 +166,7 @@
     <div class="card">
         <div class="form-row">
             <div class="form-group"><label>Item Name</label><input type="text" id="m-name" placeholder="Tacos, Pasta, Salad, ..."></div>
-            <div class="form-group"><label>Assigned To</label><input type="text" id="m-cook" placeholder="Alice, Bob"></div>
+            <div class="form-group"><label>Assigned To</label><select id="m-cook" class="traveler-dropdown"><option value="">— Select —</option></select></div>
             <div class="form-group"><label>Notes</label><input type="text" id="m-notes" placeholder="Any notes..."></div>
         </div>
         <div class="csv-actions">
@@ -168,6 +178,15 @@
     </div>
     <div class="card">
         <h2>📋 Food Menu (<span id="meals-count">0</span> items)</h2>
+        <div class="list-controls">
+            <input type="text" class="filter-input" id="filter-meals" placeholder="🔍 Search menu items..." oninput="renderMeals()">
+            <select class="sort-select" id="sort-meals" onchange="renderMeals()">
+                <option value="added">Sort: Added Order</option>
+                <option value="name-asc">Item A→Z</option>
+                <option value="name-desc">Item Z→A</option>
+                <option value="cook-asc">Assigned To A→Z</option>
+            </select>
+        </div>
         <div id="meals-list"></div>
     </div>
 </section>
@@ -188,7 +207,7 @@
             <div class="form-row">
                 <div class="form-group"><label>Item Name</label><input type="text" id="h-item" placeholder="Rice, Plates, Blankets..."></div>
                 <div class="form-group"><label>Quantity</label><input type="text" id="h-qty" placeholder="5 lbs"></div>
-                <div class="form-group"><label>Assigned To</label><input type="text" id="h-person" placeholder="Alice"></div>
+                <div class="form-group"><label>Assigned To</label><select id="h-person" class="traveler-dropdown"><option value="">— Select —</option></select></div>
                 <div class="form-group"><label>Notes</label><input type="text" id="h-notes" placeholder="Any notes..."></div>
             </div>
             <div class="csv-actions">
@@ -200,6 +219,20 @@
         </div>
         <div class="card">
             <h2>🏠 Bring from Home (<span id="home-count">0</span> items)</h2>
+            <div class="list-controls">
+                <input type="text" class="filter-input" id="filter-home" placeholder="🔍 Search items..." oninput="renderHomeList()">
+                <select class="sort-select" id="sort-home" onchange="renderHomeList()">
+                    <option value="added">Sort: Added Order</option>
+                    <option value="item-asc">Item A→Z</option>
+                    <option value="item-desc">Item Z→A</option>
+                    <option value="person-asc">Assigned To A→Z</option>
+                </select>
+                <select class="sort-select" id="filter-home-status" onchange="renderHomeList()">
+                    <option value="all">Show: All</option>
+                    <option value="unpacked">Unpacked Only</option>
+                    <option value="packed">Packed Only</option>
+                </select>
+            </div>
             <div id="home-list"></div>
         </div>
     </div>
@@ -210,9 +243,9 @@
             <div class="form-row">
                 <div class="form-group"><label>Item Name</label><input type="text" id="g-item" placeholder="Ground Beef"></div>
                 <div class="form-group"><label>Quantity</label><input type="text" id="g-qty" placeholder="3 lbs"></div>
-                <div class="form-group"><label>Shopper</label><input type="text" id="g-shopper" placeholder="Bob"></div>
+                <div class="form-group"><label>Shopper</label><select id="g-shopper" class="traveler-dropdown"><option value="">— Select —</option></select></div>
                 <div class="form-group"><label>Status</label>
-                    <select id="g-status"><option value="Need to Buy">Need to Buy</option><option value="In Cart">In Cart</option><option value="Purchased">Purchased</option></select>
+                    <select id="g-status"><option value="Need to Buy">Need to Buy</option><option value="Purchased">Purchased</option></select>
                 </div>
                 <div class="form-group"><label>Notes</label><input type="text" id="g-notes" placeholder="Any notes..."></div>
             </div>
@@ -225,6 +258,21 @@
         </div>
         <div class="card">
             <h2>🛒 Items to Purchase (<span id="grocery-count">0</span> items)</h2>
+            <div class="list-controls">
+                <input type="text" class="filter-input" id="filter-grocery" placeholder="🔍 Search items..." oninput="renderGrocery()">
+                <select class="sort-select" id="sort-grocery" onchange="renderGrocery()">
+                    <option value="added">Sort: Added Order</option>
+                    <option value="item-asc">Item A→Z</option>
+                    <option value="item-desc">Item Z→A</option>
+                    <option value="shopper-asc">Shopper A→Z</option>
+                    <option value="status-asc">Status ▲</option>
+                </select>
+                <select class="sort-select" id="filter-grocery-status" onchange="renderGrocery()">
+                    <option value="all">Status: All</option>
+                    <option value="Need to Buy">Need to Buy</option>
+                    <option value="Purchased">Purchased</option>
+                </select>
+            </div>
             <div id="grocery-list"></div>
         </div>
     </div>
@@ -246,7 +294,32 @@
     </div>
     <div class="card">
         <h2>📋 Trip Schedule</h2>
+        <div class="list-controls">
+            <input type="text" class="filter-input" id="filter-itinerary" placeholder="🔍 Search activities..." oninput="renderItinerary()">
+            <select class="sort-select" id="sort-itinerary" onchange="renderItinerary()">
+                <option value="date-asc">Sort: Date ▲ (Earliest)</option>
+                <option value="date-desc">Date ▼ (Latest)</option>
+                <option value="activity-asc">Activity A→Z</option>
+            </select>
+        </div>
         <div id="itinerary-list"></div>
+    </div>
+</section>
+
+<!-- ══ TAB: Photos ══ -->
+<section class="tab-content" id="tab-photos">
+    <h1>📸 Trip Photos</h1>
+    <div class="card">
+        <div class="photo-upload-zone" id="photo-drop-zone">
+            <span class="photo-drop-icon">📷</span>
+            <span class="photo-drop-text">Click or drag & drop to upload photos</span>
+            <input type="file" id="gallery-upload" accept="image/*" multiple hidden>
+        </div>
+        <div class="photo-upload-hint">Supports JPG, PNG, GIF — up to 16MB each</div>
+    </div>
+    <div class="card">
+        <h2>🖼️ Gallery (<span id="photo-count">0</span> photos)</h2>
+        <div id="photo-gallery" class="photo-gallery"></div>
     </div>
 </section>
 
